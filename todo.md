@@ -31,3 +31,15 @@
 - [ ] Deploy to Vercel
 - [ ] Configure yfitai.com to show marketing site first
 - [ ] Test all links and functionality
+
+
+## User-Requested Design Changes
+- [x] Fix YFIT icon (integrated actual YFIT logo with motion lines)
+- [x] Update pricing labels: Lifetime = "Most Popular", Yearly = "Best Value"
+- [x] Change "AI Nutrition Scanner" to "Barcode Scanner"
+- [x] Remove glass man avatar image
+- [x] Lighten color scheme from deep blue-purple to blue-green
+- [x] Add 8 Quick Action Cards section (Goals, Nutrition, Fitness, Daily Tracker, Medications, Progress, Predictions, AI Coach)
+- [x] Update Medication card to mention "Provider Report" and interactions
+- [x] Add personalization messaging throughout site
+- [ ] Add form analysis video (waiting for user upload)
