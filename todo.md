@@ -43,3 +43,16 @@
 - [x] Update Medication card to mention "Provider Report" and interactions
 - [x] Add personalization messaging throughout site
 - [ ] Add form analysis video (waiting for user upload)
+
+## App Bug Fixes (Main YFIT App)
+- [ ] Verify we're working in the main app deployment (check verification)
+- [ ] Fix Progress page predictive insights showing incorrect data:
+  - [ ] Next week volume incorrectly showing 3.7k lbs (should be fixed)
+  - [ ] Projected strength gain showing 0% per week
+  - [ ] Goal achievement showing 0%
+- [ ] Research better nutrition databases (low/no cost alternatives)
+- [ ] Fix branded foods showing French/Chinese results instead of English
+- [ ] Improve USDA database search relevance (too many irrelevant results)
+
+## Google Play Beta Testing
+- [ ] Check tester opt-in status tomorrow
