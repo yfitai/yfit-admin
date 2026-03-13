@@ -45,6 +45,7 @@
 - [ ] Add form analysis video (waiting for user upload)
 
 ## App Bug Fixes (Main YFIT App)
+- [x] Fix My Foods serving size bug: loading saved scanned food shows 1g instead of label serving size
 - [ ] Verify we're working in the main app deployment (check verification)
 - [ ] Fix Progress page predictive insights showing incorrect data:
   - [ ] Next week volume incorrectly showing 3.7k lbs (should be fixed)
@@ -56,3 +57,10 @@
 
 ## Google Play Beta Testing
 - [ ] Check tester opt-in status tomorrow
+
+## Workout Calculation Bugs (Main YFIT App)
+- [x] Fix Predictions: Deload predictor incorrectly showing "deload needed" with only 4 workouts
+- [x] Fix Fitness page: Strength section only showing 3 workouts instead of 4
+- [x] Fix Predictions: Habit streak showing 15 workouts and 7x/week avg (wildly incorrect)
+- [x] Fix Progress: Workout streak always shows 2 days due to schedule-unaware streak logic (M,T rest W, T,F,S rest Sun)
+- [x] Fix Predictions: Habit streak counting non-strength sessions (cardio/walking) in total workout count and avg/week
