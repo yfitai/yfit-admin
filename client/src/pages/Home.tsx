@@ -94,7 +94,7 @@ export default function Home() {
       <nav className="sticky top-0 w-full z-50 glass-card border-b border-primary/20 bg-white/80">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/images/yfit-logo.png" alt="YFIT Logo" className="h-10 w-auto" />
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/yfit-logo_e0bb531c.png" alt="YFIT Logo" className="h-10 w-auto" />
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#goals" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quick Actions</a>
@@ -147,7 +147,7 @@ export default function Home() {
             <div className="relative">
               <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 to-accent/20 opacity-50 blur-3xl rounded-full" />
               <img 
-                src="/images/hero-dashboard.png" 
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/hero-dashboard_e4827135.png" 
                 alt="YFIT Dashboard Interface" 
                 className="relative rounded-2xl border border-primary/20 shadow-2xl glass-card transform hover:scale-[1.02] transition-transform duration-500"
               />
@@ -295,7 +295,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6">
                   Simply scan any food barcode with your camera. Our database instantly logs nutritional information and calculates your daily macros.
                 </p>
-                <img src="/images/nutrition-scan.png" alt="Barcode Scanner" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/nutrition-scan_df58381c.png" alt="Barcode Scanner" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
               </CardContent>
             </Card>
 
@@ -311,7 +311,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6">
                   Your personal AI coach adapts to your progress, providing tailored workout plans, nutrition advice, and motivation when you need it most.
                 </p>
-                <img src="/images/workout-analytics.png" alt="AI Coach" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/workout-analytics_0b8e2b7f.png" alt="AI Coach" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
               </CardContent>
             </Card>
 
@@ -327,7 +327,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6">
                   Visualize your progress with professional-grade analytics. Track muscle recovery, sleep quality, strength trends, and more.
                 </p>
-                <img src="/images/hero-dashboard.png" alt="Analytics" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/hero-dashboard_e4827135.png" alt="Analytics" className="rounded-lg w-full h-48 object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
               </CardContent>
             </Card>
           </div>
@@ -439,7 +439,7 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img src="/images/yfit-logo.png" alt="YFIT Logo" className="h-8 w-auto" />
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/yfit-logo_e0bb531c.png" alt="YFIT Logo" className="h-8 w-auto" />
             </div>
             <div className="text-sm text-muted-foreground">
               © 2025 YFIT AI. All rights reserved.
