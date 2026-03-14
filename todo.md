@@ -71,3 +71,11 @@
 - [x] Fitness/Progress page: Add weekly reset banner on Sunday when workout count is 0
 - [x] Monday morning recap nudge: Banner showing last week's summary (workouts, calories, streak)
 - [x] Tiered theme: Apply light green-blue tint to stat/summary cards across all pages (keep data lists, charts, forms white)
+
+## Prediction Fixes & UX Enhancements (Round 2)
+- [x] Fix Predictions: Injury risk training frequency counting Sunday (shows 6x, should be 5x for Mon-Sat week)
+- [x] Fix Predictions: Body recomp fat loss showing -51.6 lbs (unrealistic — likely weekly deficit used instead of 12-week projection)
+- [x] Fix Predictions: Body recomp muscle gain showing +4.4 lbs (check if 12-week math is correct)
+- [x] Monday recap: Pull last week's streak from Supabase instead of current (reset) streak
+- [x] Sunday wrap-up: Add "Log today's workout to finish the week strong" CTA button linking to workout logger
+- [x] Goals page: Apply teal theme to form/section cards (Body Type Education, Basic Info, Body Measurements, Manual Overrides)
