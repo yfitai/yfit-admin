@@ -79,3 +79,10 @@
 - [x] Monday recap: Pull last week's streak from Supabase instead of current (reset) streak
 - [x] Sunday wrap-up: Add "Log today's workout to finish the week strong" CTA button linking to workout logger
 - [x] Goals page: Apply teal theme to form/section cards (Body Type Education, Basic Info, Body Measurements, Manual Overrides)
+
+## Prediction & Theme Fixes (Round 3)
+- [ ] Fix Predictions: TDEE/Calorie Needs card still showing 6x activity level (has its own separate frequency calc)
+- [ ] Fix Progress: Projected strength gain showing +22.2%/week (unrealistic - likely wrong time window or denominator)
+- [ ] Standardize week boundary to Sunday=start, Saturday=end across ALL calculations (currently inconsistent)
+- [ ] Apply teal theme to Body Recomp progress cards (currently white)
+- [ ] Apply teal theme to FAQ page cards
