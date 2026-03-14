@@ -65,3 +65,9 @@
 - [x] Fix Progress: Workout streak always shows 2 days due to schedule-unaware streak logic (M,T rest W, T,F,S rest Sun)
 - [x] Fix Predictions: Habit streak counting non-strength sessions (cardio/walking) in total workout count and avg/week
 - [x] Nutrition page: Replace "no data" empty state with friendly "no workouts logged yet this week" message after Sunday reset
+
+## UX & Theme Improvements
+- [x] Predictions page: Add "Building this week's data..." placeholder cards when prediction functions return null (Sunday/early week)
+- [x] Fitness/Progress page: Add weekly reset banner on Sunday when workout count is 0
+- [x] Monday morning recap nudge: Banner showing last week's summary (workouts, calories, streak)
+- [x] Tiered theme: Apply light green-blue tint to stat/summary cards across all pages (keep data lists, charts, forms white)
