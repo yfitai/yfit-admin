@@ -100,3 +100,5 @@
 
 ## Bug Fixes
 - [x] Medications: Provider report PDF shows only title/date with no medication data (blank body)
+- [x] Medications: Provider report PDF shows "no medications on file" for custom-added medications (query only fetches DB-linked meds)
+- [x] Medications: Verify supplements appear correctly in provider report PDF - now fetches from both user_supplements and user_medications(is_supplement=true)
