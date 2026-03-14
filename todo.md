@@ -64,3 +64,4 @@
 - [x] Fix Predictions: Habit streak showing 15 workouts and 7x/week avg (wildly incorrect)
 - [x] Fix Progress: Workout streak always shows 2 days due to schedule-unaware streak logic (M,T rest W, T,F,S rest Sun)
 - [x] Fix Predictions: Habit streak counting non-strength sessions (cardio/walking) in total workout count and avg/week
+- [x] Nutrition page: Replace "no data" empty state with friendly "no workouts logged yet this week" message after Sunday reset
