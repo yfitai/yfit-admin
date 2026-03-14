@@ -88,6 +88,12 @@
 - [x] Apply teal theme to FAQ page cards
 
 ## Theme & UX Fixes (Round 4)
-- [ ] Apply teal theme to Medications page cards
-- [ ] Apply teal theme to Fitness log and create workout pages
-- [ ] Fix Progress page Last Week Summary card to show every day (not just Mondays)
+- [x] Apply teal theme to Medications page cards
+- [x] Apply teal theme to Fitness log and create workout pages
+- [x] Fix Progress page Last Week Summary card to show every day (not just Mondays)
+- [x] Dashboard: Add "first full week" empty state message to Last Week Summary card when both values are 0
+
+## Theme & UX Fixes (Round 5)
+- [ ] Apply teal theme to exercise selector cards in WorkoutLogger/ExerciseSelector (Form page)
+- [ ] Apply teal theme to Goal Summary card in Goals page
+- [ ] Apply teal theme to Daily Tracker, Weekly, and Templates tabs in Nutrition page
