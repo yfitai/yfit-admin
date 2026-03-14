@@ -97,3 +97,6 @@
 - [ ] Apply teal theme to exercise selector cards in WorkoutLogger/ExerciseSelector (Form page)
 - [ ] Apply teal theme to Goal Summary card in Goals page
 - [ ] Apply teal theme to Daily Tracker, Weekly, and Templates tabs in Nutrition page
+
+## Bug Fixes
+- [x] Medications: Provider report PDF shows only title/date with no medication data (blank body)
