@@ -81,8 +81,13 @@
 - [x] Goals page: Apply teal theme to form/section cards (Body Type Education, Basic Info, Body Measurements, Manual Overrides)
 
 ## Prediction & Theme Fixes (Round 3)
-- [ ] Fix Predictions: TDEE/Calorie Needs card still showing 6x activity level (has its own separate frequency calc)
-- [ ] Fix Progress: Projected strength gain showing +22.2%/week (unrealistic - likely wrong time window or denominator)
-- [ ] Standardize week boundary to Sunday=start, Saturday=end across ALL calculations (currently inconsistent)
-- [ ] Apply teal theme to Body Recomp progress cards (currently white)
-- [ ] Apply teal theme to FAQ page cards
+- [x] Fix Predictions: TDEE/Calorie Needs card still showing 6x activity level (has its own separate frequency calc)
+- [x] Fix Progress: Projected strength gain showing +22.2%/week (unrealistic - relabeled as Volume Trend with ±15% cap)
+- [x] Standardize week boundary to Sunday=start, Saturday=end across ALL calculations (currently inconsistent)
+- [x] Apply teal theme to Body Recomp progress cards (currently white)
+- [x] Apply teal theme to FAQ page cards
+
+## Theme & UX Fixes (Round 4)
+- [ ] Apply teal theme to Medications page cards
+- [ ] Apply teal theme to Fitness log and create workout pages
+- [ ] Fix Progress page Last Week Summary card to show every day (not just Mondays)
