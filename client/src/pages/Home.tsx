@@ -357,6 +357,10 @@ export default function Home() {
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Basic Workout Tracking</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Manual Meal Logging</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 3 Saved Routines</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 5 Barcode Scans / month</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 3 Form Analyses / month</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> 10 AI Coach queries / month</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Predictions preview</li>
                 </ul>
               </CardContent>
               <CardFooter>
@@ -373,10 +377,11 @@ export default function Home() {
               </CardHeader>
               <CardContent className="flex-1">
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Barcode Scanner</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Unlimited Barcode Scanner</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Medication Tracking</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Form Analysis</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Unlimited Form Analysis</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Unlimited AI Coaching</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Full AI Predictions</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-primary" /> Advanced Analytics</li>
                 </ul>
               </CardContent>
