@@ -42,7 +42,10 @@
 - [x] Add 8 Quick Action Cards section (Goals, Nutrition, Fitness, Daily Tracker, Medications, Progress, Predictions, AI Coach)
 - [x] Update Medication card to mention "Provider Report" and interactions
 - [x] Add personalization messaging throughout site
-- [ ] Add form analysis video (waiting for user upload)
+- [x] Add form analysis video (waiting for user upload)
+- [x] Add FormAnalysisShowcase interactive demo section to marketing site
+- [x] Add MedicationShowcase interactive mockup section to marketing site
+- [x] Add Testimonials section to marketing site
 
 ## App Bug Fixes (Main YFIT App)
 - [x] Fix My Foods serving size bug: loading saved scanned food shows 1g instead of label serving size
@@ -102,3 +105,49 @@
 - [x] Medications: Provider report PDF shows only title/date with no medication data (blank body)
 - [x] Medications: Provider report PDF shows "no medications on file" for custom-added medications (query only fetches DB-linked meds)
 - [x] Medications: Verify supplements appear correctly in provider report PDF - now fetches from both user_supplements and user_medications(is_supplement=true)
+
+## Social Media Automation — Master Launch Checklist
+
+### Phase 2: Account Setup (Partially Done)
+- [x] YouTube channel created and profiled
+- [ ] Facebook Page — complete profile (logo, banner, About, website), copy Page ID
+- [ ] Pinterest Business — verify website, create 5 boards, get access token from developers.pinterest.com
+- [ ] Instagram Business — complete profile, get access token via developers.facebook.com
+- [ ] LinkedIn Company Page — complete profile, get access token from linkedin.com/developers
+- [ ] TikTok Business — create account on phone, switch to Business, get access token from business.tiktok.com
+
+### Phase 3: Upload-Post Connections (Waiting on Phase 2)
+- [ ] Log in to upload-post.com and connect YouTube (OAuth)
+- [ ] Connect Facebook Page (Page ID + token)
+- [ ] Connect Pinterest (access token)
+- [ ] Connect Instagram (access token)
+- [ ] Connect LinkedIn (access token)
+- [ ] Connect TikTok (access token)
+- [ ] Copy Upload-Post API key → send to Manus for n8n/Supabase secrets
+
+### API Keys Still Needed (User Action)
+- [ ] Get Pexels API key — pexels.com/api (free, instant)
+- [ ] Get ElevenLabs API key — elevenlabs.io (free tier)
+- [ ] Get Upload-Post API key — from upload-post.com account settings
+
+### Manus Tasks (After User Provides API Keys)
+- [x] Upgrade video service to use real Pexels video backgrounds (server.js updated)
+- [x] Add Pexels, ElevenLabs, Upload-Post API keys to n8n workflow (already embedded)
+- [ ] Add PEXELS_API_KEY to Railway video service environment variables (user action required)
+- [ ] Update n8n workflow with Upload-Post API key and YFIT profile username
+- [ ] Add social media follow links to welcome email template
+- [ ] Add social media links to footer of all automated emails
+- [ ] Verify generate-social-content edge function reads same article as Daily Insight
+- [ ] Run end-to-end dry run of full automation pipeline
+
+### Phase 4: Link-in-Bio (After Accounts Created)
+- [ ] Create Linktree at linktr.ee/yfitai with all 6 platform links
+- [ ] Update Instagram bio link to Linktree URL
+- [ ] Update TikTok bio link to Linktree URL
+
+### Backlog / Future
+- [ ] FormScoreGauge not displaying on Android device (service worker cache issue)
+- [x] Add Pexels real video backgrounds to video assembly service (replace static gradient)
+- [ ] Phase 7: First manual posts on each platform (3 posts each before automation)
+- [ ] Phase 8: Full integration test (email, content gen, video assembly, social posting)
+- [ ] Phase 9: Enable daily cron + n8n schedule for full automation go-live
