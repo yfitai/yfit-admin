@@ -1,7 +1,4 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import FormAnalysisShowcase from "@/components/FormAnalysisShowcase";
-import MedicationShowcase from "@/components/MedicationShowcase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, ArrowRight, Activity, Zap, Smartphone, BarChart3, Pill, Eye, Target, Dumbbell, Heart, TrendingUp, Apple, Calendar, Brain } from "lucide-react";
 
@@ -438,41 +435,6 @@ export default function Home() {
                 <Button onClick={launchApp} className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white">Get Lifetime</Button>
               </CardFooter>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Form Analysis Section */}
-      <FormAnalysisShowcase />
-
-      {/* Medication Showcase Section */}
-      <MedicationShowcase />
-
-      {/* Testimonials Section */}
-      <section className="py-24 bg-gradient-to-b from-transparent to-primary/5">
-        <div className="container mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-5xl font-bold mb-6">What Our Users Say</h2>
-            <p className="text-lg text-muted-foreground">Real people. Real results. Real transformations.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: 'Sarah M.', role: 'Lost 28 lbs in 4 months', quote: 'The AI form coaching completely changed how I train. I used to get knee pain every leg day — YFIT caught that my knees were caving in and fixed it in one session.', avatar: 'SM', color: 'from-blue-500 to-purple-500' },
-              { name: 'James T.', role: 'Type 2 Diabetic, 6 months', quote: 'The medication tracker with workout interaction warnings is a game changer. I never knew my blood pressure meds affected my cardio capacity until YFIT flagged it.', avatar: 'JT', color: 'from-green-500 to-teal-500' },
-              { name: 'Maria L.', role: 'Marathon runner, 2 years', quote: 'I track everything — nutrition, sleep, workouts, meds — in one app. The AI insights connect the dots in ways I never could manually. My race times have dropped by 8 minutes.', avatar: 'ML', color: 'from-orange-500 to-red-500' },
-            ].map((t) => (
-              <div key={t.name} className="bg-card border border-border rounded-2xl p-8 hover:border-primary/50 transition-colors">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm`}>{t.avatar}</div>
-                  <div>
-                    <div className="font-semibold text-foreground">{t.name}</div>
-                    <div className="text-sm text-primary">{t.role}</div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground leading-relaxed italic">&ldquo;{t.quote}&rdquo;</p>
-                <div className="mt-4 flex gap-1">{[1,2,3,4,5].map(s => <span key={s} className="text-yellow-400 text-sm">★</span>)}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
