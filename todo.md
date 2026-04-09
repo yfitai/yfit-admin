@@ -114,15 +114,15 @@
 - [ ] Pinterest Business — verify website, create 5 boards, get access token from developers.pinterest.com
 - [ ] Instagram Business — complete profile, get access token via developers.facebook.com
 - [ ] LinkedIn Company Page — complete profile, get access token from linkedin.com/developers
-- [ ] TikTok Business — create account on phone, switch to Business, get access token from business.tiktok.com
+- [x] TikTok — created @yfitai account (social@yfitai.com), connected to Upload-Post as "Smokey" — rename to YFIT AI after Apr 15
 
 ### Phase 3: Upload-Post Connections (Waiting on Phase 2)
-- [ ] Log in to upload-post.com and connect YouTube (OAuth)
-- [ ] Connect Facebook Page (Page ID + token)
-- [ ] Connect Pinterest (access token)
-- [ ] Connect Instagram (access token)
-- [ ] Connect LinkedIn (access token)
-- [ ] Connect TikTok (access token)
+- [x] Log in to upload-post.com and connect YouTube (OAuth)
+- [ ] Connect Facebook Page (Page ID + token) — BROKEN, personal profile only, tackle tomorrow
+- [x] Connect Pinterest (@yfitai Business account) — connected
+- [x] Connect Instagram (yfit.ai Business account) — connected
+- [x] Connect LinkedIn — connected, posts go to YFIT AI Company Page (ID: 113374511)
+- [x] Connect TikTok (@yfitai) — connected
 - [ ] Copy Upload-Post API key → send to Manus for n8n/Supabase secrets
 
 ### API Keys Still Needed (User Action)
