@@ -151,3 +151,30 @@
 - [ ] Phase 7: First manual posts on each platform (3 posts each before automation)
 - [ ] Phase 8: Full integration test (email, content gen, video assembly, social posting)
 - [ ] Phase 9: Enable daily cron + n8n schedule for full automation go-live
+
+## Decisions & Technical Findings Log
+
+### Facebook Connection (Apr 11, 2026)
+- **Status**: Facebook connected to Don Campbell personal profile in Upload-Post, but API returns "No Facebook pages found"
+- **Root cause**: OAuth during initial connection did not grant Page-level permissions (`pages_manage_posts`, `pages_read_engagement`)
+- **Upload-Post mechanism**: To post to a Facebook Page, the API requires `facebook_page_id` parameter in `/api/upload` calls. First need `/api/uploadposts/facebook/pages` to return the YFIT AI Page ID.
+- **Attempted fix**: Disconnect + reconnect via Android (Upload-Post OAuth → Facebook native app) — but Facebook OAuth flow never showed a "Select Pages" screen during reconnect
+- **Blocked by**: Facebook security hold on Don Campbell account (blocking all verification codes on desktop). Android native app OAuth also not showing Page selection step.
+- **Decision**: Defer Facebook posting until security hold clears (24-48 hrs from last attempt). When retrying:
+  1. On Android, open Upload-Post → disconnect Facebook → reconnect
+  2. During Facebook OAuth, look for "Edit" or "Choose Pages" option — may need to tap "Edit" next to Pages section
+  3. After reconnect, verify with GET `/api/uploadposts/facebook/pages` — should return YFIT AI Page
+  4. Add `facebook_page_id` to n8n workflow Facebook posting node
+- **YFIT AI Facebook Page**: Don Campbell has admin access. Page has no logo yet (just "Y"). Page ID unknown until OAuth grants Page access.
+- **social@yfitai.com**: Already associated with another Facebook account — cannot be added to Don Campbell account.
+
+### Upload-Post Plan (Apr 11, 2026)
+- Account shows **Premium** plan (previously noted as Basic — was upgraded)
+- API key: `eyJhbGci...MFGSWkbU` (created 3/12/2026, Active)
+- Profile name in Upload-Post: **YFIT**
+- Platforms connected: Instagram ✓, YouTube ✓, LinkedIn ✓, Pinterest ✓, TikTok ✓, Facebook ✗ (personal only, no Page access)
+
+### v2.9.0 Video Service (Apr 11, 2026)
+- Deployed to Railway, not yet tested with a new Instagram post
+- Key improvements: BGM at 15% volume, Montserrat ExtraBold font, 52px captions, brightness boost, luma threshold 110
+- Next session: trigger a test run via n8n webhook and check Instagram for quality improvement
