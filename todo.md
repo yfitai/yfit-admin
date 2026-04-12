@@ -118,7 +118,7 @@
 
 ### Phase 3: Upload-Post Connections (Waiting on Phase 2)
 - [x] Log in to upload-post.com and connect YouTube (OAuth)
-- [ ] Connect Facebook Page (Page ID + token) — BROKEN, personal profile only, tackle tomorrow
+- [x] Connect Facebook Page (Page ID + token) — COMPLETED Apr 12, 2026. YFIT AI Page ID: 972545122618897
 - [x] Connect Pinterest (@yfitai Business account) — connected
 - [x] Connect Instagram (yfit.ai Business account) — connected
 - [x] Connect LinkedIn — connected, posts go to YFIT AI Company Page (ID: 113374511)
@@ -154,25 +154,20 @@
 
 ## Decisions & Technical Findings Log
 
-### Facebook Connection (Apr 11, 2026)
-- **Status**: Facebook connected to Don Campbell personal profile in Upload-Post, but API returns "No Facebook pages found"
-- **Root cause**: OAuth during initial connection did not grant Page-level permissions (`pages_manage_posts`, `pages_read_engagement`)
-- **Upload-Post mechanism**: To post to a Facebook Page, the API requires `facebook_page_id` parameter in `/api/upload` calls. First need `/api/uploadposts/facebook/pages` to return the YFIT AI Page ID.
-- **Attempted fix**: Disconnect + reconnect via Android (Upload-Post OAuth → Facebook native app) — but Facebook OAuth flow never showed a "Select Pages" screen during reconnect
-- **Blocked by**: Facebook security hold on Don Campbell account (blocking all verification codes on desktop). Android native app OAuth also not showing Page selection step.
-- **Decision**: Defer Facebook posting until security hold clears (24-48 hrs from last attempt). When retrying:
-  1. On Android, open Upload-Post → disconnect Facebook → reconnect
-  2. During Facebook OAuth, look for "Edit" or "Choose Pages" option — may need to tap "Edit" next to Pages section
-  3. After reconnect, verify with GET `/api/uploadposts/facebook/pages` — should return YFIT AI Page
-  4. Add `facebook_page_id` to n8n workflow Facebook posting node
-- **YFIT AI Facebook Page**: Don Campbell has admin access. Page has no logo yet (just "Y"). Page ID unknown until OAuth grants Page access.
+### Facebook Connection — RESOLVED (Apr 12, 2026)
+- **Status**: FULLY CONNECTED. Upload-Post API now returns YFIT AI Page. n8n workflow updated.
+- **YFIT AI Facebook Page ID**: `972545122618897` (internal Meta Page ID)
+- **YFIT AI Facebook Profile URL**: https://www.facebook.com/profile.php?id=61574304872606
+- **Resolution path**: Facebook security hold was resolved by changing password on Android → approving login on Samsung S25 Ultra → navigating directly to facebook.com on desktop (bypassed the /hacked redirect). Then reconnected Upload-Post OAuth on desktop — this time the Page selection screen appeared showing YFIT AI and ROGA Drone. Selected YFIT AI, granted all Page permissions.
+- **Permissions granted to Upload-Post**: Create/manage content on Page, Manage comments, Read content, Read user content, Show list of Pages
+- **n8n workflow updated**: `facebook_page_id: "972545122618897"` added to both Upload-Post — Post Video and Upload-Post — Post Text nodes. Saved via REST API (Status 200).
 - **social@yfitai.com**: Already associated with another Facebook account — cannot be added to Don Campbell account.
 
 ### Upload-Post Plan (Apr 11, 2026)
 - Account shows **Premium** plan (previously noted as Basic — was upgraded)
 - API key: `eyJhbGci...MFGSWkbU` (created 3/12/2026, Active)
 - Profile name in Upload-Post: **YFIT**
-- Platforms connected: Instagram ✓, YouTube ✓, LinkedIn ✓, Pinterest ✓, TikTok ✓, Facebook ✗ (personal only, no Page access)
+- Platforms connected: Instagram ✓, YouTube ✓, LinkedIn ✓, Pinterest ✓, TikTok ✓, Facebook ✓ (YFIT AI Page, ID: 972545122618897)
 
 ### v2.9.0 Video Service (Apr 11, 2026)
 - Deployed to Railway, not yet tested with a new Instagram post
