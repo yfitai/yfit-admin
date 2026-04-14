@@ -1,17 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, ArrowRight, Activity, Zap, Smartphone, BarChart3, Pill, Eye, Target, Dumbbell, Heart, TrendingUp, Apple, Calendar, Brain } from "lucide-react";
+import { useTracking } from "@/hooks/useTracking";
 
 export default function Home() {
+  const { track } = useTracking();
+
   const scrollToPricing = () => {
+    track("nav_click_pricing");
     document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const scrollToGoals = () => {
+    track("nav_click_features");
     document.getElementById('goals')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const launchApp = () => {
+  const launchApp = (source: string) => {
+    track(`cta_click_${source}`);
     window.location.href = "https://yfit-deploy.vercel.app";
   };
 
@@ -97,11 +103,38 @@ export default function Home() {
             <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663099417101/8TNedJULyoVCPDLa6UYde3/yfit-logo_e0bb531c.png" alt="YFIT Logo" className="h-10 w-auto" />
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#goals" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quick Actions</a>
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Features</a>
-            <a href="#unique" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">What Makes Us Different</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Pricing</a>
-            <Button onClick={launchApp} className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg glow-effect">
+            <a
+              href="#goals"
+              onClick={() => track("nav_click_quick_actions")}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Quick Actions
+            </a>
+            <a
+              href="#features"
+              onClick={() => track("nav_click_features")}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Features
+            </a>
+            <a
+              href="#unique"
+              onClick={() => track("nav_click_unique")}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              What Makes Us Different
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => track("nav_click_pricing")}
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Pricing
+            </a>
+            <Button
+              onClick={() => launchApp("nav_launch_app")}
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg glow-effect"
+            >
               Launch App
             </Button>
           </div>
@@ -125,11 +158,20 @@ export default function Home() {
                 Experience truly personalized fitness with YFIT. Advanced AI coaching, barcode nutrition scanning, medication tracking with provider reports, and real-time form analysis—all tailored to your unique goals.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={launchApp} size="lg" className="text-lg px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white glow-effect">
+                <Button
+                  onClick={() => launchApp("hero_start_journey")}
+                  size="lg"
+                  className="text-lg px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white glow-effect"
+                >
                   Start Your Journey
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-                <Button onClick={scrollToGoals} size="lg" variant="outline" className="text-lg px-8 border-primary/30 hover:bg-primary/5">
+                <Button
+                  onClick={scrollToGoals}
+                  size="lg"
+                  variant="outline"
+                  className="text-lg px-8 border-primary/30 hover:bg-primary/5"
+                >
                   Explore Features
                 </Button>
               </div>
@@ -170,7 +212,11 @@ export default function Home() {
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (
-                <Card key={index} className="glass-card border-primary/20 hover:border-primary/40 transition-all group cursor-pointer hover:shadow-xl hover:-translate-y-1 duration-300">
+                <Card
+                  key={index}
+                  onClick={() => track(`feature_card_click_${action.title.toLowerCase().replace(/\s+/g, '_')}`)}
+                  className="glass-card border-primary/20 hover:border-primary/40 transition-all group cursor-pointer hover:shadow-xl hover:-translate-y-1 duration-300"
+                >
                   <CardHeader className="text-center pb-4">
                     <div className={`w-16 h-16 rounded-2xl ${action.iconBg} flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform`}>
                       <Icon className={`w-8 h-8 ${action.iconColor}`} />
@@ -204,7 +250,10 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Medication Tracking */}
-            <Card className="glass-card border-accent/30 hover:border-accent/50 transition-all group relative overflow-hidden">
+            <Card
+              onClick={() => track("feature_detail_click_medication")}
+              className="glass-card border-accent/30 hover:border-accent/50 transition-all group relative overflow-hidden cursor-pointer"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="relative z-10">
                 <div className="w-16 h-16 rounded-xl bg-pink-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -215,7 +264,7 @@ export default function Home() {
               </CardHeader>
               <CardContent className="relative z-10">
                 <p className="text-muted-foreground mb-4 leading-relaxed">
-                  YFIT is the <strong className="text-foreground">only fitness app</strong> that seamlessly integrates medication tracking with your fitness routine. Track prescriptions, supplements, and vitamins alongside your workouts and nutrition.
+                  YFIT is the <strong className="text-foreground">only fitness app</strong> that integrates medication management directly into your health journey—tracking how your prescriptions and supplements interact with your workouts and nutrition.
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -239,7 +288,10 @@ export default function Home() {
             </Card>
 
             {/* Form Analysis */}
-            <Card className="glass-card border-primary/30 hover:border-primary/50 transition-all group relative overflow-hidden">
+            <Card
+              onClick={() => track("feature_detail_click_form_analysis")}
+              className="glass-card border-primary/30 hover:border-primary/50 transition-all group relative overflow-hidden cursor-pointer"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="relative z-10">
                 <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -364,7 +416,13 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={launchApp} className="w-full" variant="outline">Get Started</Button>
+                <Button
+                  onClick={() => launchApp("pricing_starter")}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Get Started
+                </Button>
               </CardFooter>
             </Card>
 
@@ -386,7 +444,12 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={launchApp} className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white">Start Free Trial</Button>
+                <Button
+                  onClick={() => launchApp("pricing_pro_monthly")}
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
+                >
+                  Start Free Trial
+                </Button>
               </CardFooter>
             </Card>
 
@@ -409,7 +472,12 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={launchApp} className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white">Subscribe Yearly</Button>
+                <Button
+                  onClick={() => launchApp("pricing_pro_yearly")}
+                  className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white"
+                >
+                  Subscribe Yearly
+                </Button>
               </CardFooter>
             </Card>
 
@@ -432,7 +500,12 @@ export default function Home() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={launchApp} className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white">Get Lifetime</Button>
+                <Button
+                  onClick={() => launchApp("pricing_lifetime")}
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white"
+                >
+                  Get Lifetime
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -450,9 +523,27 @@ export default function Home() {
               © 2025 YFIT AI. All rights reserved.
             </div>
             <div className="flex gap-6">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Privacy</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Terms</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Contact</a>
+              <a
+                href="#"
+                onClick={() => track("footer_click_privacy")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Privacy
+              </a>
+              <a
+                href="#"
+                onClick={() => track("footer_click_terms")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Terms
+              </a>
+              <a
+                href="#"
+                onClick={() => track("footer_click_contact")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                Contact
+              </a>
             </div>
           </div>
         </div>

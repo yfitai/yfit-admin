@@ -189,7 +189,7 @@
 - [x] Add UMAMI_ENDPOINT and UMAMI_WEBSITE_ID to server env.ts
 - [x] Add PDF report generator endpoint to server
 - [x] Add AI analysis section using invokeLLM
-- [ ] Add Umami custom event tracking to marketing site CTA buttons
+- [x] Add Umami custom event tracking to marketing site CTA buttons
 - [x] Build n8n workflow: YFIT Weekly Analytics Report (Monday 6 AM CDT)
 - [x] Wire Resend email delivery with PDF attachment in n8n
-- [ ] Test end-to-end and send first sample report
+- [x] Test end-to-end and send first sample report

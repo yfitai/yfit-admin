@@ -22,7 +22,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://YOUR_MANUS_APP_URL/api/send-weekly-report",
+        "url": "https://yfitcoach-8tnedjul.manus.space/api/send-weekly-report",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
