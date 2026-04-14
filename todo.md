@@ -173,3 +173,23 @@
 - Deployed to Railway, not yet tested with a new Instagram post
 - Key improvements: BGM at 15% volume, Montserrat ExtraBold font, 52px captions, brightness boost, luma threshold 110
 - Next session: trigger a test run via n8n webhook and check Instagram for quality improvement
+
+## Pending Decisions
+
+- [ ] **April 15 — TikTok posting frequency decision**: TikTok account becomes active April 15 (nickname change). Decide: (a) 1x/day at 7 AM same as other platforms, (b) 2x/day at 7 AM + 7 PM with genuinely different content/angle each time. Decision should be based on early engagement data from first week. Duplicate posting (same video twice) not recommended — TikTok may flag it.
+
+## n8n Schedule Trigger Setup
+
+- [ ] Add Schedule Trigger node to n8n workflow firing at 6:00 AM CDT (11:00 AM UTC) daily — replaces Supabase daily-trigger dependency (which has 0 invocations, never ran)
+- Current posting times per platform: Instagram 8 AM, LinkedIn 8 AM, YouTube 9 AM, Facebook 1 PM, Pinterest 8 PM (all CDT)
+- TikTok posting time: TBD after April 15 frequency decision
+
+## Weekly Analytics Report System
+- [x] Add analytics proxy tRPC endpoint to server (Umami + Upload-Post data)
+- [x] Add UMAMI_ENDPOINT and UMAMI_WEBSITE_ID to server env.ts
+- [x] Add PDF report generator endpoint to server
+- [x] Add AI analysis section using invokeLLM
+- [ ] Add Umami custom event tracking to marketing site CTA buttons
+- [x] Build n8n workflow: YFIT Weekly Analytics Report (Monday 6 AM CDT)
+- [x] Wire Resend email delivery with PDF attachment in n8n
+- [ ] Test end-to-end and send first sample report

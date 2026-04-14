@@ -7,4 +7,13 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Analytics
+  umamiEndpoint: process.env.VITE_ANALYTICS_ENDPOINT ?? "https://manus-analytics.com",
+  umamiWebsiteId: process.env.VITE_ANALYTICS_WEBSITE_ID ?? "9d198333-8322-4848-9258-0476c99e5df5",
+  uploadPostApiKey: process.env.UPLOAD_POST_API_KEY ?? "",
+  facebookPageId: "972545122618897",
+  // Email
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  reportRecipient: "support@yfitai.com",
+  reportSender: "noreply@yfitai.com",
 };

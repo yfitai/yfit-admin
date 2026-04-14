@@ -1,0 +1,153 @@
+{
+  "name": "YFIT Weekly Analytics Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 11 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every Monday 6 AM CDT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "notes": "Fires every Monday at 11:00 AM UTC = 6:00 AM CDT. Triggers the weekly report generation and email delivery."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_MANUS_APP_URL/api/send-weekly-report",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "days",
+              "value": "7"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "http-request",
+      "name": "Generate & Send Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "notes": "Calls the YFIT marketing server to: 1) Fetch Upload-Post social analytics, 2) Fetch Umami website analytics, 3) Generate AI analysis, 4) Build PDF, 5) Email to support@yfitai.com via Resend."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-check",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-success",
+      "name": "Report Sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst summary = result.summary || {};\n\nconsole.log('✅ YFIT Weekly Report sent successfully!');\nconsole.log(`📅 Period: ${result.weekStart} → ${result.weekEnd}`);\nconsole.log(`📊 Reach: ${summary.totalReach?.toLocaleString() || 0}`);\nconsole.log(`👥 Website visitors: ${summary.websiteVisitors?.toLocaleString() || 0}`);\nconsole.log(`🔗 Social referrals: ${summary.socialReferrals?.toLocaleString() || 0}`);\nconsole.log(`📧 Message ID: ${result.messageId}`);\n\nreturn [{ json: { status: 'success', ...result } }];"
+      },
+      "id": "log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nconsole.error('❌ YFIT Weekly Report FAILED!');\nconsole.error(`Error: ${result.error || 'Unknown error'}`);\nconsole.error('Full response:', JSON.stringify(result, null, 2));\n\n// You can add a Slack/email alert here if needed\nreturn [{ json: { status: 'failed', error: result.error, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "log-error",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 420]
+    }
+  ],
+  "connections": {
+    "Every Monday 6 AM CDT": {
+      "main": [
+        [
+          {
+            "node": "Generate & Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate & Send Report": {
+      "main": [
+        [
+          {
+            "node": "Report Sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report Sent?": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": ["analytics", "weekly-report", "yfit"],
+  "meta": {
+    "instanceId": "yfit-weekly-analytics-report-v1"
+  }
+}
