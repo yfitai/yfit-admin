@@ -193,3 +193,15 @@
 - [x] Build n8n workflow: YFIT Weekly Analytics Report (Monday 6 AM CDT)
 - [x] Wire Resend email delivery with PDF attachment in n8n
 - [x] Test end-to-end and send first sample report
+
+## Monthly P&L / GST Accounting System
+- [x] Database schema: 5 tables (stripe_income, expenses, expense_categories, csv_import_batches, monthly_reports)
+- [x] Stripe income sync module (stripeSync.ts) — pulls charges, converts USD→CAD, calculates fees
+- [x] CIBC CSV importer (csvImporter.ts) — parse CIBC format, auto-categorize, calculate GST ITCs
+- [x] Accounting tRPC router (accountingRouter.ts) — CSV upload, expense CRUD, report generation
+- [x] Accounting dashboard UI — CSV upload page, expense review table, report viewer
+- [x] Monthly P&L PDF generator — Manitoba GST remittance layout
+- [x] Monthly report email endpoint — POST /api/send-monthly-report
+- [x] n8n workflow — first Monday after month-end trigger
+- [x] Year-end annual statement generator
+- [x] Push DB schema migrations

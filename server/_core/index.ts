@@ -12,6 +12,13 @@ import { generateWeeklyReport } from "../reportGenerator";
 import { sendWeeklyReport } from "../emailReport";
 import { invokeLLM } from "./llm";
 import type { FullAnalyticsData } from "../analytics";
+import { syncStripeIncomeForMonth, getStripeIncomeForMonth } from "../stripeSync";
+import { getExpensesForMonth } from "../csvImporter";
+import { generateMonthlyReport, generateYearEndStatement } from "../accountingPdf";
+import { sendMonthlyReport, sendYearEndStatement } from "../accountingEmail";
+import { getDb } from "../db";
+import { monthlyReports } from "../../drizzle/schema";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -116,6 +123,162 @@ async function startServer() {
       });
     } catch (err) {
       console.error("[Analytics] Report generation failed:", err);
+      res.status(500).json({
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  });
+
+  // ── Webhook: POST /api/send-monthly-report ──────────────────────────────────
+  // Called by n8n on the first Monday after month-end.
+  // Syncs Stripe income, generates PDF, and emails to support@yfitai.com.
+  // Body: { year: number, month: number } — defaults to previous month if omitted.
+  app.post("/api/send-monthly-report", async (req, res) => {
+    try {
+      const now = new Date();
+      // Default to previous month
+      let year = Number(req.body?.year ?? (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()));
+      let month = Number(req.body?.month ?? (now.getMonth() === 0 ? 12 : now.getMonth()));
+
+      console.log(`[Accounting] Generating monthly report for ${year}-${String(month).padStart(2, "0")}...`);
+
+      // 1. Sync Stripe income for the month
+      const syncResult = await syncStripeIncomeForMonth(year, month);
+      console.log(`[Accounting] Stripe sync: ${syncResult.synced} new, ${syncResult.skipped} skipped`);
+
+      // 2. Get income and expense data
+      const income = await getStripeIncomeForMonth(year, month);
+      const expenseData = await getExpensesForMonth(year, month);
+
+      // 3. Compute report
+      const netGstRemittableCadCents = income.gstCollectedCadCents - expenseData.totalGstItcCadCents;
+      const netProfitCadCents = income.netRevenueCadCents - expenseData.totalExpensesCadCents;
+
+      const reportData = {
+        year,
+        month,
+        grossRevenueCadCents: income.grossRevenueCadCents,
+        totalRefundsCadCents: income.totalRefundsCadCents,
+        stripeFeesTotalCadCents: income.stripeFeesTotalCadCents,
+        netRevenueCadCents: income.netRevenueCadCents,
+        gstCollectedCadCents: income.gstCollectedCadCents,
+        totalExpensesCadCents: expenseData.totalExpensesCadCents,
+        totalGstItcCadCents: expenseData.totalGstItcCadCents,
+        netGstRemittableCadCents,
+        netProfitCadCents,
+        expensesByCategory: expenseData.byCategory,
+        incomeRows: income.rows,
+        expenseRows: expenseData.rows,
+      };
+
+      // 4. Generate PDF
+      const pdfBuffer = await generateMonthlyReport(reportData);
+
+      // 5. Send email
+      const emailResult = await sendMonthlyReport(pdfBuffer, year, month, {
+        grossRevenueCadCents: income.grossRevenueCadCents,
+        netRevenueCadCents: income.netRevenueCadCents,
+        totalExpensesCadCents: expenseData.totalExpensesCadCents,
+        netProfitCadCents,
+        gstCollectedCadCents: income.gstCollectedCadCents,
+        totalGstItcCadCents: expenseData.totalGstItcCadCents,
+        netGstRemittableCadCents,
+      });
+
+      // 6. Cache report in DB
+      try {
+        const db = await getDb();
+        if (db) {
+          const period = `${year}-${String(month).padStart(2, "0")}`;
+          const existing = await db.select({ id: monthlyReports.id }).from(monthlyReports).where(eq(monthlyReports.period, period)).limit(1);
+          const reportRow = {
+            period,
+            grossRevenueCadCents: income.grossRevenueCadCents,
+            totalRefundsCadCents: income.totalRefundsCadCents,
+            stripeFeesTotalCadCents: income.stripeFeesTotalCadCents,
+            netRevenueCadCents: income.netRevenueCadCents,
+            gstCollectedCadCents: income.gstCollectedCadCents,
+            totalExpensesCadCents: expenseData.totalExpensesCadCents,
+            totalGstItcCadCents: expenseData.totalGstItcCadCents,
+            netGstRemittableCadCents,
+            netProfitCadCents,
+          };
+          if (existing.length > 0) {
+            await db.update(monthlyReports).set(reportRow).where(eq(monthlyReports.period, period));
+          } else {
+            await db.insert(monthlyReports).values(reportRow);
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[Accounting] DB cache failed:", dbErr);
+      }
+
+      res.json({
+        success: emailResult.success,
+        messageId: emailResult.messageId,
+        error: emailResult.error,
+        period: `${year}-${String(month).padStart(2, "0")}`,
+        syncResult,
+        summary: {
+          grossRevenueCadCents: income.grossRevenueCadCents,
+          netRevenueCadCents: income.netRevenueCadCents,
+          totalExpensesCadCents: expenseData.totalExpensesCadCents,
+          netProfitCadCents,
+          netGstRemittableCadCents,
+        },
+      });
+    } catch (err) {
+      console.error("[Accounting] Monthly report failed:", err);
+      res.status(500).json({
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  });
+
+  // ── Webhook: POST /api/send-year-end-report ───────────────────────────────
+  // Called once per year (December 31) by n8n to generate the annual statement.
+  // Body: { year: number } — defaults to current year.
+  app.post("/api/send-year-end-report", async (req, res) => {
+    try {
+      const year = Number(req.body?.year ?? new Date().getFullYear());
+      console.log(`[Accounting] Generating year-end statement for ${year}...`);
+
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const reports = await db
+        .select()
+        .from(monthlyReports)
+        .where(and(gte(monthlyReports.period, `${year}-01`), lte(monthlyReports.period, `${year}-12`)))
+        .orderBy(monthlyReports.period);
+
+      const totals = {
+        grossRevenueCadCents: reports.reduce((s, r) => s + r.grossRevenueCadCents, 0),
+        totalRefundsCadCents: reports.reduce((s, r) => s + r.totalRefundsCadCents, 0),
+        stripeFeesTotalCadCents: reports.reduce((s, r) => s + r.stripeFeesTotalCadCents, 0),
+        netRevenueCadCents: reports.reduce((s, r) => s + r.netRevenueCadCents, 0),
+        gstCollectedCadCents: reports.reduce((s, r) => s + r.gstCollectedCadCents, 0),
+        totalExpensesCadCents: reports.reduce((s, r) => s + r.totalExpensesCadCents, 0),
+        totalGstItcCadCents: reports.reduce((s, r) => s + r.totalGstItcCadCents, 0),
+        netGstRemittableCadCents: reports.reduce((s, r) => s + r.netGstRemittableCadCents, 0),
+        netProfitCadCents: reports.reduce((s, r) => s + r.netProfitCadCents, 0),
+      };
+
+      const pdfBuffer = await generateYearEndStatement(year, reports, totals);
+      const emailResult = await sendYearEndStatement(pdfBuffer, year, totals);
+
+      res.json({
+        success: emailResult.success,
+        messageId: emailResult.messageId,
+        error: emailResult.error,
+        year,
+        monthsCovered: reports.length,
+        totals,
+      });
+    } catch (err) {
+      console.error("[Accounting] Year-end report failed:", err);
       res.status(500).json({
         success: false,
         error: err instanceof Error ? err.message : String(err),
