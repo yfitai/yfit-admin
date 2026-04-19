@@ -106,7 +106,7 @@ export async function fetchSocialAnalytics(days = 7): Promise<SocialAnalyticsRes
 async function umamiGet(path: string, params: Record<string, string | number>): Promise<unknown> {
   const base = ENV.umamiEndpoint;
   const qs = new URLSearchParams(
-    Object.entries(params).map(([k, v]) => [k, String(v)])
+    Object.entries(params).map(([k, v]): [string, string] => [k, String(v)])
   ).toString();
   const url = `${base}${path}?${qs}`;
 

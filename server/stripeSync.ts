@@ -47,7 +47,7 @@ async function getUsdToCadRate(): Promise<number> {
       "https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=1"
     );
     if (!res.ok) throw new Error("Bank of Canada API unavailable");
-    const data = await res.json();
+    const data = await res.json() as { observations?: Array<{ FXUSDCAD?: { v?: string } }> };
     const rate = data.observations?.[0]?.FXUSDCAD?.v;
     if (rate) return parseFloat(rate);
   } catch {
@@ -82,11 +82,11 @@ async function fetchStripeChargesForMonth(year: number, month: number): Promise<
     });
 
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json() as { error?: { message?: string } };
       throw new Error(`Stripe API error: ${err.error?.message}`);
     }
 
-    const list: StripeList<StripeCharge> = await res.json();
+    const list = await res.json() as StripeList<StripeCharge>;
     charges.push(...list.data);
 
     if (list.has_more && list.data.length > 0) {
@@ -160,13 +160,13 @@ export async function syncStripeIncomeForMonth(
       stripeChargeId: charge.id,
       amountUsdCents,
       amountCadCents,
-      exchangeRate: exchangeRate.toFixed(6),
+      usdToCadRate: exchangeRate.toFixed(6),
       gstCollectedCadCents,
       stripeFeesCadCents,
       currency: charge.currency,
       customerEmail: charge.customer_email ?? null,
       description: charge.description ?? null,
-      status: charge.refunded ? "refunded" : "succeeded",
+      status: (charge.refunded ? "refunded" : "succeeded") as "succeeded" | "refunded" | "disputed",
       refunded: charge.refunded,
       refundAmountCadCents,
       chargedAt: new Date(charge.created * 1000),
