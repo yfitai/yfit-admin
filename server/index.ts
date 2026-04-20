@@ -18,15 +18,11 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { router, createContext } from "./_core/trpc.js";
 import { accountingRouter } from "./accountingRouter.js";
 import { analyticsRouter } from "./analyticsRouter.js";
 import { ENV } from "./env.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ─── App Router ───────────────────────────────────────────────────────────────
 
@@ -254,11 +250,9 @@ Please write a brief weekly performance summary. Keep it under 200 words.`,
     })
   );
 
-  // ── Serve React frontend ──────────────────────────────────────────────────────
-  const distPath = path.join(__dirname, "../client/dist");
-  app.use(express.static(distPath));
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
+  // ── 404 handler ──────────────────────────────────────────────────────────────
+  app.use((_req, res) => {
+    res.status(404).json({ error: "Not found" });
   });
 
   // ── Start ─────────────────────────────────────────────────────────────────────
