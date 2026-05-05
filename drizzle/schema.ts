@@ -158,3 +158,34 @@ export const monthlyReports = mysqlTable("monthly_reports", {
 });
 
 export type MonthlyReport = typeof monthlyReports.$inferSelect;
+
+// ─── Contact / Support Submissions ───────────────────────────────────────────
+
+/**
+ * Stores every contact form submission from the marketing site.
+ * An AI-generated auto-reply is sent to the user via Resend,
+ * and the owner is notified at support@yfitai.com.
+ */
+export const contactSubmissions = mysqlTable("contact_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Sender's name as entered in the form */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Sender's email address */
+  email: varchar("email", { length: 320 }).notNull(),
+  /** Subject line chosen by the sender */
+  subject: varchar("subject", { length: 255 }).notNull(),
+  /** Full message body */
+  message: text("message").notNull(),
+  /** AI-generated auto-reply that was sent back to the user */
+  autoReply: text("autoReply"),
+  /** Whether the auto-reply was successfully delivered */
+  autoReplySent: boolean("autoReplySent").default(false).notNull(),
+  /** Whether the owner notification was successfully delivered */
+  ownerNotified: boolean("ownerNotified").default(false).notNull(),
+  /** Resend message ID for the auto-reply (for tracking) */
+  resendMessageId: varchar("resendMessageId", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type InsertContactSubmission = typeof contactSubmissions.$inferInsert;
