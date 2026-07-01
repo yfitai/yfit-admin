@@ -353,6 +353,133 @@ export async function importCibcCsv(
 }
 
 /**
+ * Import a multi-month CIBC CSV (e.g. a full date-range export) by splitting
+ * transactions into per-month batches automatically.
+ * Skips any month that already has an import batch to prevent duplicates.
+ */
+export async function importCibcCsvMultiMonth(
+  csvContent: string,
+  fileName: string
+): Promise<{
+  monthResults: Array<{
+    statementMonth: string;
+    success: boolean;
+    imported: number;
+    skipped: number;
+    error?: string;
+    alreadyImported?: boolean;
+  }>;
+  totalMonths: number;
+  totalImported: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { transactions, errors: parseErrors } = parseCibcCsv(csvContent);
+
+  if (parseErrors.length > 0) {
+    console.warn(`[CSVImport] Multi-month parse warnings: ${parseErrors.slice(0, 5).join("; ")}`);
+  }
+
+  // Group transactions by YYYY-MM
+  const byMonth = new Map<string, ParsedTransaction[]>();
+  for (const tx of transactions) {
+    const year = tx.date.getUTCFullYear();
+    const month = String(tx.date.getUTCMonth() + 1).padStart(2, "0");
+    const key = `${year}-${month}`;
+    if (!byMonth.has(key)) byMonth.set(key, []);
+    byMonth.get(key)!.push(tx);
+  }
+
+  const sortedMonths = Array.from(byMonth.keys()).sort();
+  const monthResults: Array<{
+    statementMonth: string;
+    success: boolean;
+    imported: number;
+    skipped: number;
+    error?: string;
+    alreadyImported?: boolean;
+  }> = [];
+  let totalImported = 0;
+
+  for (const statementMonth of sortedMonths) {
+    const monthTxs = byMonth.get(statementMonth)!;
+
+    // Check for existing batch to prevent duplicates
+    const existing = await db
+      .select({ id: csvImportBatches.id })
+      .from(csvImportBatches)
+      .where(eq(csvImportBatches.statementMonth, statementMonth))
+      .limit(1);
+
+    if (existing.length > 0) {
+      monthResults.push({
+        statementMonth,
+        success: false,
+        imported: 0,
+        skipped: monthTxs.length,
+        alreadyImported: true,
+        error: `Month ${statementMonth} was already imported. Skipped to prevent duplicates.`,
+      });
+      continue;
+    }
+
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    let imported = 0;
+    let skipped = 0;
+    let totalAmountCadCents = 0;
+    const insertErrors: string[] = [];
+
+    for (const tx of monthTxs) {
+      try {
+        await db.insert(expenses).values({
+          transactionDate: tx.date,
+          merchantName: tx.description,
+          amountCadCents: tx.amountCadCents,
+          gstItcCadCents: tx.gstItcCadCents,
+          preTaxAmountCadCents: tx.preTaxAmountCadCents,
+          category: tx.category,
+          gstEligible: tx.gstEligible,
+          notes: tx.needsReview ? "Auto-categorized as 'other' — please review" : null,
+          importBatchId: batchId,
+          reviewed: !tx.needsReview,
+        });
+        imported++;
+        totalAmountCadCents += tx.amountCadCents;
+      } catch (err) {
+        insertErrors.push(`"${tx.description}": ${err instanceof Error ? err.message : String(err)}`);
+        skipped++;
+      }
+    }
+
+    // Create batch record for this month
+    await db.insert(csvImportBatches).values({
+      batchId,
+      statementMonth,
+      fileName: `${fileName} [${statementMonth}]`,
+      totalTransactions: imported,
+      totalAmountCadCents,
+    });
+
+    console.log(`[CSVImport] Multi-month batch ${statementMonth}: imported=${imported}, skipped=${skipped}`);
+    totalImported += imported;
+
+    monthResults.push({
+      statementMonth,
+      success: true,
+      imported,
+      skipped,
+    });
+  }
+
+  return {
+    monthResults,
+    totalMonths: sortedMonths.length,
+    totalImported,
+  };
+}
+
+/**
  * Get all expenses for a given month.
  */
 export async function getExpensesForMonth(year: number, month: number) {

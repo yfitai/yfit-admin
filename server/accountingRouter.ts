@@ -12,7 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
 import { expenses, csvImportBatches, monthlyReports, stripeIncome } from "../drizzle/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
-import { importCibcCsv, getExpensesForMonth } from "./csvImporter";
+import { importCibcCsv, importCibcCsvMultiMonth, getExpensesForMonth } from "./csvImporter";
 import { syncStripeIncomeForMonth, getStripeIncomeForMonth } from "./stripeSync";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -330,5 +330,23 @@ export const accountingRouter = router({
       };
 
       return { year: input.year, months: reports, totals };
+    }),
+
+  /**
+   * Import a single multi-month CIBC CSV (full date-range export).
+   * Automatically splits transactions by month and imports each separately.
+   * Skips months that are already imported to prevent duplicates.
+   */
+  importMultiMonthCsv: protectedProcedure
+    .input(
+      z.object({
+        fileName: z.string(),
+        csvContent: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      requireOwner(ctx);
+      const result = await importCibcCsvMultiMonth(input.csvContent, input.fileName);
+      return result;
     }),
 });

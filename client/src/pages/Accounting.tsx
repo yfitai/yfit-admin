@@ -148,19 +148,19 @@ export default function Accounting() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Bulk backfill state
-  type BulkFile = { file: File; statementMonth: string; id: string };
-  type BulkResult = { statementMonth: string; fileName: string; success: boolean; rowsImported?: number; rowsSkipped?: number; error?: string };
+  type BulkFile = { file: File; id: string };
+  type BulkResult = { statementMonth: string; success: boolean; imported: number; skipped: number; error?: string; alreadyImported?: boolean };
   const [bulkFiles, setBulkFiles] = useState<BulkFile[]>([]);
   const [bulkIsDragging, setBulkIsDragging] = useState(false);
   const [bulkResults, setBulkResults] = useState<BulkResult[] | null>(null);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
-  const bulkUploadMutation = trpc.accounting.bulkUploadCsv.useMutation({
+  const importMultiMonthMutation = trpc.accounting.importMultiMonthCsv.useMutation({
     onSuccess: (data) => {
-      setBulkResults(data.results as BulkResult[]);
-      const succeeded = data.results.filter((r) => r.success).length;
-      const failed = data.results.filter((r) => !r.success).length;
-      if (succeeded > 0) toast.success(`Backfill complete: ${succeeded} month(s) imported successfully.${failed > 0 ? ` ${failed} skipped.` : ""}`);
-      else toast.error(`All ${failed} file(s) failed to import. See results below.`);
+      setBulkResults(data.monthResults as BulkResult[]);
+      const succeeded = data.monthResults.filter((r) => r.success).length;
+      const skipped = data.monthResults.filter((r) => !r.success).length;
+      if (succeeded > 0) toast.success(`Backfill complete: ${succeeded} month(s) imported (${data.totalImported} transactions).${skipped > 0 ? ` ${skipped} month(s) skipped.` : ""}`);
+      else toast.error(`No months imported. All ${skipped} month(s) were skipped (already imported or empty).`);
       reportsListQuery.refetch();
     },
     onError: (err) => toast.error(`Bulk import failed: ${err.message}`),
@@ -188,7 +188,7 @@ export default function Accounting() {
       const existing = new Set(prev.map(b => b.id));
       const newFiles = dropped
         .filter(f => !existing.has(f.name + f.size))
-        .map(f => ({ file: f, statementMonth: inferMonth(f.name), id: f.name + f.size }));
+        .map(f => ({ file: f, id: f.name + f.size }));
       return [...prev, ...newFiles];
     });
   }, []);
@@ -199,7 +199,7 @@ export default function Accounting() {
       const existing = new Set(prev.map(b => b.id));
       const newFiles = files
         .filter(f => !existing.has(f.name + f.size))
-        .map(f => ({ file: f, statementMonth: inferMonth(f.name), id: f.name + f.size }));
+        .map(f => ({ file: f, id: f.name + f.size }));
       return [...prev, ...newFiles];
     });
     e.target.value = "";
@@ -207,15 +207,10 @@ export default function Accounting() {
 
   const handleBulkUpload = useCallback(async () => {
     if (bulkFiles.length === 0) return;
-    const files = await Promise.all(
-      bulkFiles.map(async (bf) => ({
-        fileName: bf.file.name,
-        csvContent: await bf.file.text(),
-        statementMonth: bf.statementMonth,
-      }))
-    );
-    bulkUploadMutation.mutate({ files });
-  }, [bulkFiles, bulkUploadMutation]);
+    const file = bulkFiles[0];
+    const csvContent = await file.file.text();
+    importMultiMonthMutation.mutate({ fileName: file.file.name, csvContent });
+  }, [bulkFiles, importMultiMonthMutation]);
 
   // tRPC queries
   const reportQuery = trpc.accounting.getMonthlyReport.useQuery(
@@ -1003,39 +998,25 @@ export default function Accounting() {
                           <thead className="bg-gray-50 border-b">
                             <tr>
                               <th className="text-left px-3 py-2 font-medium text-gray-600">File</th>
-                              <th className="text-left px-3 py-2 font-medium text-gray-600">Statement Month</th>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">Note</th>
                               <th className="px-3 py-2"></th>
                             </tr>
                           </thead>
                           <tbody>
-                            {bulkFiles
-                              .slice()
-                              .sort((a, b) => a.statementMonth.localeCompare(b.statementMonth))
-                              .map((bf) => (
-                                <tr key={bf.id} className="border-b last:border-0 hover:bg-gray-50">
-                                  <td className="px-3 py-2 text-gray-700 max-w-[220px] truncate">{bf.file.name}</td>
-                                  <td className="px-3 py-2">
-                                    <input
-                                      type="month"
-                                      value={bf.statementMonth}
-                                      onChange={(e) =>
-                                        setBulkFiles(prev =>
-                                          prev.map(b => b.id === bf.id ? { ...b, statementMonth: e.target.value } : b)
-                                        )
-                                      }
-                                      className="border border-gray-300 rounded px-2 py-1 text-xs w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2 text-right">
-                                    <button
-                                      onClick={() => setBulkFiles(prev => prev.filter(b => b.id !== bf.id))}
-                                      className="text-gray-400 hover:text-red-500 transition-colors"
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
+                            {bulkFiles.map((bf) => (
+                              <tr key={bf.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="px-3 py-2 text-gray-700 max-w-[300px] truncate">{bf.file.name}</td>
+                                <td className="px-3 py-2 text-xs text-gray-400">Months auto-detected from transaction dates</td>
+                                <td className="px-3 py-2 text-right">
+                                  <button
+                                    onClick={() => setBulkFiles(prev => prev.filter(b => b.id !== bf.id))}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
                           </tbody>
                         </table>
                       </div>
@@ -1045,18 +1026,18 @@ export default function Accounting() {
                   {/* Import button */}
                   <Button
                     onClick={handleBulkUpload}
-                    disabled={bulkFiles.length === 0 || bulkUploadMutation.isPending}
+                    disabled={bulkFiles.length === 0 || importMultiMonthMutation.isPending}
                     className="w-full gap-2 bg-[#1B4F72] hover:bg-[#154360]"
                   >
-                    {bulkUploadMutation.isPending ? (
+                    {importMultiMonthMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Importing {bulkFiles.length} month(s)... this may take a minute
+                        Importing... splitting by month, this may take a minute
                       </>
                     ) : (
                       <>
                         <PackagePlus className="w-4 h-4" />
-                        Import {bulkFiles.length > 0 ? `${bulkFiles.length} Month(s)` : "All Months"}
+                        {bulkFiles.length > 0 ? `Import ${bulkFiles[0].file.name}` : "Drop a CSV file above"}
                       </>
                     )}
                   </Button>
@@ -1085,12 +1066,12 @@ export default function Accounting() {
                                   r.success ? "bg-green-50/40" : "bg-red-50/40"
                                 }`}>
                                   <td className="px-3 py-2 font-medium">{r.statementMonth}</td>
-                                  <td className="px-3 py-2 text-gray-500 max-w-[180px] truncate">{r.fileName}</td>
+                                  <td className="px-3 py-2 text-gray-500 max-w-[180px] truncate">auto-split</td>
                                   <td className="px-3 py-2 text-right text-green-700 font-medium">
-                                    {r.success ? r.rowsImported ?? 0 : "—"}
+                                    {r.success ? r.imported ?? 0 : "—"}
                                   </td>
                                   <td className="px-3 py-2 text-right text-gray-500">
-                                    {r.success ? r.rowsSkipped ?? 0 : "—"}
+                                    {r.success ? r.skipped ?? 0 : "—"}
                                   </td>
                                   <td className="px-3 py-2">
                                     {r.success ? (
