@@ -97,6 +97,71 @@ export const accountingRouter = router({
     }),
 
   /**
+   * Bulk upload multiple CIBC CSV files at once (backfill).
+   * Processes each file sequentially and returns per-file results.
+   */
+  bulkUploadCsv: protectedProcedure
+    .input(
+      z.object({
+        files: z.array(
+          z.object({
+            fileName: z.string(),
+            csvContent: z.string(),
+            statementMonth: z.string().regex(/^\d{4}-\d{2}$/, "Format: YYYY-MM"),
+          })
+        ).min(1).max(24),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      requireOwner(ctx);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const results: Array<{
+        statementMonth: string;
+        fileName: string;
+        success: boolean;
+        rowsImported?: number;
+        rowsSkipped?: number;
+        error?: string;
+      }> = [];
+      for (const file of input.files) {
+        try {
+          // Check if this month was already imported to prevent duplicate expenses
+          const existing = await db
+            .select({ id: csvImportBatches.id })
+            .from(csvImportBatches)
+            .where(eq(csvImportBatches.statementMonth, file.statementMonth))
+            .limit(1);
+          if (existing.length > 0) {
+            results.push({
+              statementMonth: file.statementMonth,
+              fileName: file.fileName,
+              success: false,
+              error: `Month ${file.statementMonth} was already imported (batch already exists). Delete existing expenses first if you need to re-import.`,
+            });
+            continue;
+          }
+          const result = await importCibcCsv(file.csvContent, file.fileName, file.statementMonth);
+          results.push({
+            statementMonth: file.statementMonth,
+            fileName: file.fileName,
+            success: true,
+            rowsImported: result.imported,
+            rowsSkipped: result.skipped,
+          });
+        } catch (err: unknown) {
+          results.push({
+            statementMonth: file.statementMonth,
+            fileName: file.fileName,
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      return { results, totalFiles: input.files.length };
+    }),
+
+  /**
    * Sync Stripe income for a given month.
    */
   syncStripe: protectedProcedure

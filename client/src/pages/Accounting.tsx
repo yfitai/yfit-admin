@@ -46,6 +46,9 @@ import {
   Send,
   BarChart3,
   Calendar,
+  PackagePlus,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 
@@ -136,13 +139,83 @@ export default function Accounting() {
   const [selectedYear, setSelectedYear] = useState(prev.year);
   const [selectedMonth, setSelectedMonth] = useState(prev.month);
 
-  // CSV upload state
+  // CSV upload state (single)
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [statementMonth, setStatementMonth] = useState(
     `${prev.year}-${String(prev.month).padStart(2, "0")}`
   );
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Bulk backfill state
+  type BulkFile = { file: File; statementMonth: string; id: string };
+  type BulkResult = { statementMonth: string; fileName: string; success: boolean; rowsImported?: number; rowsSkipped?: number; error?: string };
+  const [bulkFiles, setBulkFiles] = useState<BulkFile[]>([]);
+  const [bulkIsDragging, setBulkIsDragging] = useState(false);
+  const [bulkResults, setBulkResults] = useState<BulkResult[] | null>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
+  const bulkUploadMutation = trpc.accounting.bulkUploadCsv.useMutation({
+    onSuccess: (data) => {
+      setBulkResults(data.results as BulkResult[]);
+      const succeeded = data.results.filter((r) => r.success).length;
+      const failed = data.results.filter((r) => !r.success).length;
+      if (succeeded > 0) toast.success(`Backfill complete: ${succeeded} month(s) imported successfully.${failed > 0 ? ` ${failed} skipped.` : ""}`);
+      else toast.error(`All ${failed} file(s) failed to import. See results below.`);
+      reportsListQuery.refetch();
+    },
+    onError: (err) => toast.error(`Bulk import failed: ${err.message}`),
+  });
+
+  // Infer statement month from CIBC filename pattern e.g. "2025-09.csv" or "Sep2025.csv"
+  function inferMonth(filename: string): string {
+    const m1 = filename.match(/(\d{4})[-_](\d{2})/);
+    if (m1) return `${m1[1]}-${m1[2]}`;
+    const monthNames = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    const m2 = filename.toLowerCase().match(new RegExp(`(${monthNames.join("|")})(\\d{4})`));
+    if (m2) {
+      const mIdx = monthNames.indexOf(m2[1]) + 1;
+      return `${m2[2]}-${String(mIdx).padStart(2,"0")}`;
+    }
+    return `${prev.year}-${String(prev.month).padStart(2,"0")}`;
+  }
+
+  const handleBulkDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setBulkIsDragging(false);
+    const dropped = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith(".csv"));
+    if (dropped.length === 0) { toast.error("Please drop CSV files only"); return; }
+    setBulkFiles(prev => {
+      const existing = new Set(prev.map(b => b.id));
+      const newFiles = dropped
+        .filter(f => !existing.has(f.name + f.size))
+        .map(f => ({ file: f, statementMonth: inferMonth(f.name), id: f.name + f.size }));
+      return [...prev, ...newFiles];
+    });
+  }, []);
+
+  const handleBulkFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).filter(f => f.name.endsWith(".csv"));
+    setBulkFiles(prev => {
+      const existing = new Set(prev.map(b => b.id));
+      const newFiles = files
+        .filter(f => !existing.has(f.name + f.size))
+        .map(f => ({ file: f, statementMonth: inferMonth(f.name), id: f.name + f.size }));
+      return [...prev, ...newFiles];
+    });
+    e.target.value = "";
+  }, []);
+
+  const handleBulkUpload = useCallback(async () => {
+    if (bulkFiles.length === 0) return;
+    const files = await Promise.all(
+      bulkFiles.map(async (bf) => ({
+        fileName: bf.file.name,
+        csvContent: await bf.file.text(),
+        statementMonth: bf.statementMonth,
+      }))
+    );
+    bulkUploadMutation.mutate({ files });
+  }, [bulkFiles, bulkUploadMutation]);
 
   // tRPC queries
   const reportQuery = trpc.accounting.getMonthlyReport.useQuery(
@@ -327,6 +400,10 @@ export default function Accounting() {
             <TabsTrigger value="history">
               <FileText className="w-4 h-4 mr-2" />
               Report History
+            </TabsTrigger>
+            <TabsTrigger value="backfill">
+              <PackagePlus className="w-4 h-4 mr-2" />
+              Bulk Backfill
             </TabsTrigger>
           </TabsList>
 
@@ -865,6 +942,201 @@ export default function Accounting() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* ── BULK BACKFILL TAB ─────────────────────────────────────────────── */}
+          <TabsContent value="backfill">
+            <div className="max-w-3xl">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PackagePlus className="w-5 h-5 text-blue-600" />
+                    Bulk Backfill — Sept 2025 to Present
+                  </CardTitle>
+                  <CardDescription>
+                    Upload all your CIBC monthly CSV statements at once. Each file is processed
+                    in order and duplicate months are automatically skipped. Statement months are
+                    inferred from the filename — you can adjust them below before importing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Drop zone */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setBulkIsDragging(true); }}
+                    onDragLeave={() => setBulkIsDragging(false)}
+                    onDrop={handleBulkDrop}
+                    onClick={() => bulkFileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      bulkIsDragging
+                        ? "border-blue-400 bg-blue-50"
+                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/30"
+                    }`}
+                  >
+                    <input
+                      ref={bulkFileInputRef}
+                      type="file"
+                      accept=".csv"
+                      multiple
+                      className="hidden"
+                      onChange={handleBulkFileInput}
+                    />
+                    <PackagePlus className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <p className="font-medium text-gray-600">Drop all your CIBC CSV files here</p>
+                    <p className="text-sm text-gray-400 mt-1">or click to browse — select multiple files at once</p>
+                    <p className="text-xs text-gray-400 mt-2">Supports up to 24 files (2 years of statements)</p>
+                  </div>
+
+                  {/* File list with editable months */}
+                  {bulkFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-700">{bulkFiles.length} file(s) queued</p>
+                        <button
+                          onClick={() => { setBulkFiles([]); setBulkResults(null); }}
+                          className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <X className="w-3 h-3" /> Clear all
+                        </button>
+                      </div>
+                      <div className="rounded-lg border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 border-b">
+                            <tr>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">File</th>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">Statement Month</th>
+                              <th className="px-3 py-2"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bulkFiles
+                              .slice()
+                              .sort((a, b) => a.statementMonth.localeCompare(b.statementMonth))
+                              .map((bf) => (
+                                <tr key={bf.id} className="border-b last:border-0 hover:bg-gray-50">
+                                  <td className="px-3 py-2 text-gray-700 max-w-[220px] truncate">{bf.file.name}</td>
+                                  <td className="px-3 py-2">
+                                    <input
+                                      type="month"
+                                      value={bf.statementMonth}
+                                      onChange={(e) =>
+                                        setBulkFiles(prev =>
+                                          prev.map(b => b.id === bf.id ? { ...b, statementMonth: e.target.value } : b)
+                                        )
+                                      }
+                                      className="border border-gray-300 rounded px-2 py-1 text-xs w-36 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2 text-right">
+                                    <button
+                                      onClick={() => setBulkFiles(prev => prev.filter(b => b.id !== bf.id))}
+                                      className="text-gray-400 hover:text-red-500 transition-colors"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Import button */}
+                  <Button
+                    onClick={handleBulkUpload}
+                    disabled={bulkFiles.length === 0 || bulkUploadMutation.isPending}
+                    className="w-full gap-2 bg-[#1B4F72] hover:bg-[#154360]"
+                  >
+                    {bulkUploadMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Importing {bulkFiles.length} month(s)... this may take a minute
+                      </>
+                    ) : (
+                      <>
+                        <PackagePlus className="w-4 h-4" />
+                        Import {bulkFiles.length > 0 ? `${bulkFiles.length} Month(s)` : "All Months"}
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Results */}
+                  {bulkResults && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">Import Results</p>
+                      <div className="rounded-lg border overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 border-b">
+                            <tr>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">Month</th>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">File</th>
+                              <th className="text-right px-3 py-2 font-medium text-gray-600">Imported</th>
+                              <th className="text-right px-3 py-2 font-medium text-gray-600">Skipped</th>
+                              <th className="text-left px-3 py-2 font-medium text-gray-600">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bulkResults
+                              .slice()
+                              .sort((a, b) => a.statementMonth.localeCompare(b.statementMonth))
+                              .map((r, i) => (
+                                <tr key={i} className={`border-b last:border-0 ${
+                                  r.success ? "bg-green-50/40" : "bg-red-50/40"
+                                }`}>
+                                  <td className="px-3 py-2 font-medium">{r.statementMonth}</td>
+                                  <td className="px-3 py-2 text-gray-500 max-w-[180px] truncate">{r.fileName}</td>
+                                  <td className="px-3 py-2 text-right text-green-700 font-medium">
+                                    {r.success ? r.rowsImported ?? 0 : "—"}
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-gray-500">
+                                    {r.success ? r.rowsSkipped ?? 0 : "—"}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {r.success ? (
+                                      <span className="flex items-center gap-1 text-green-700 text-xs">
+                                        <CheckCircle className="w-3.5 h-3.5" /> Imported
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1 text-red-600 text-xs" title={r.error}>
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        {r.error?.includes("already imported") ? "Already imported" : "Error"}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {bulkResults.some(r => r.success) && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Go to the <strong>Overview</strong> tab and select each month to sync Stripe income and send the monthly report.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* How to download from CIBC */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-2">
+                    <p className="font-semibold">How to download your CIBC statements (one-time backfill)</p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-blue-700">
+                      <li>Log in to CIBC Online Banking</li>
+                      <li>In the left sidebar, click <strong>Download Transactions</strong></li>
+                      <li>Select your YFIT AI Mastercard from the account dropdown</li>
+                      <li>Set the date range to cover one full statement month (e.g. Sept 1–30, 2025)</li>
+                      <li>Choose <strong>CSV</strong> format and click Download</li>
+                      <li>Name the file with the month for easy identification (e.g. <code>2025-09.csv</code>)</li>
+                      <li>Repeat for each month from September 2025 to present</li>
+                      <li>Drop all files here at once — the system will import them in order</li>
+                    </ol>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Tip: CIBC keeps 18 months of transaction history available for download.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

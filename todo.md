@@ -205,3 +205,11 @@
 - [x] n8n workflow — first Monday after month-end trigger
 - [x] Year-end annual statement generator
 - [x] Push DB schema migrations
+
+## Bulk CSV Backfill (Sept 2025 – Jun 2026)
+- [ ] Add `bulkUploadCsv` tRPC mutation to accountingRouter (accepts array of {fileName, csvContent, statementMonth})
+- [ ] Add bulk upload UI to Accounting.tsx: multi-file select, auto-detect month from filename, sequential import with progress
+- [ ] Add auto-Stripe-sync after each CSV import (trigger syncStripeIncomeForMonth automatically)
+- [ ] Add step-by-step CIBC CSV download instructions panel in the UI
+- [ ] Test bulk import with 10 months of data (Sept 2025 – Jun 2026)
+- [ ] Checkpoint and deploy
