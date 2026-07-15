@@ -130,6 +130,16 @@ async function startServer() {
     }
   });
 
+  // ── Alias: POST /api/weekly-report ─────────────────────────────────────────
+  // AUDIT FIX (Session 19, Jul 15 2026): n8n was calling /api/weekly-report
+  // (old Railway URL). Added alias so both old and new URL work while n8n is updated.
+  // TODO: Update n8n HTTP node URL to https://admin.yfitai.com/api/send-weekly-report
+  app.post("/api/weekly-report", async (req, res) => {
+    // Forward to the canonical handler
+    req.url = "/api/send-weekly-report";
+    app._router.handle(req, res, () => {});
+  });
+
   // ── Webhook: POST /api/send-monthly-report ──────────────────────────────────
   // Called by n8n on the first Monday after month-end.
   // Syncs Stripe income, generates PDF, and emails to support@yfitai.com.
