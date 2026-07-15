@@ -21,7 +21,7 @@ export default function Home() {
 
   const launchApp = (source: string) => {
     track(`cta_click_${source}`);
-    window.location.href = "https://yfit-deploy.vercel.app";
+    window.location.href = "https://app.yfitai.com";
   };
 
   // 8 Quick Action Cards - matching the actual YFIT app
@@ -94,8 +94,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Limited Time Offer Banner */}
-      <div className="w-full bg-gradient-to-r from-primary to-accent text-white py-3 text-center font-semibold text-sm md:text-base animate-pulse">
+      {/* Offer Banner */}
+      <div className="w-full bg-gradient-to-r from-primary to-accent text-white py-3 text-center font-semibold text-sm md:text-base">
         🎉 {t('pricing.limitedOffer')} 🎉
       </div>
 
@@ -198,7 +198,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <p>Join 10,000+ users transforming their lives</p>
+                <p>Join our growing community of early adopters</p>
               </div>
             </div>
             <div className="relative">
