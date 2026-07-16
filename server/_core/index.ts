@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { execSync } from "child_process";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -73,7 +74,32 @@ Please write a plain-language weekly performance summary. Structure:
 Under 300 words. Be specific with numbers.`;
 }
 
+/**
+ * Run Drizzle migrations on startup so the Railway MySQL database stays in sync
+ * with the schema. Uses CREATE TABLE IF NOT EXISTS semantics — safe to run repeatedly.
+ * AUDIT FIX (Session 20, Jul 15 2026): ensures stripe_income table exists (audit 3.2)
+ */
+async function runMigrations(): Promise<void> {
+  if (!process.env.DATABASE_URL) {
+    console.warn("[Migration] DATABASE_URL not set — skipping migrations");
+    return;
+  }
+  try {
+    console.log("[Migration] Running drizzle-kit migrate...");
+    execSync("npx drizzle-kit migrate", {
+      cwd: process.cwd(),
+      stdio: "inherit",
+      timeout: 60_000,
+    });
+    console.log("[Migration] Migrations complete.");
+  } catch (err) {
+    // Log but don't crash — the server can still serve existing tables
+    console.error("[Migration] Migration failed (non-fatal):", err);
+  }
+}
+
 async function startServer() {
+  await runMigrations();
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

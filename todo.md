@@ -213,3 +213,18 @@
 - [ ] Add step-by-step CIBC CSV download instructions panel in the UI
 - [ ] Test bulk import with 10 months of data (Sept 2025 – Jun 2026)
 - [ ] Checkpoint and deploy
+
+## Marketing Site Redesign (Session 23)
+- [x] Rewrite Home.tsx with visual-first layout (remove text-heavy card sections)
+- [x] New problem-first hero headline: "The fitness app that tracks your medications and analyses your form"
+- [x] Replace 8 text cards with 3 real app screenshot showcase
+- [x] Replace text-based differentiator cards with visual feature panels (pink/blue)
+- [x] Add competitor comparison table (YFIT vs MyFitnessPal vs Noom)
+- [x] Add FAQ section with 5 accordion items
+- [x] Add bottom CTA section
+- [x] Add working mobile hamburger menu with all nav links
+- [x] Fix Contact footer link to mailto:support@yfitai.com
+- [x] Remove fake social proof placeholder avatars
+- [x] Pricing: BEST VALUE on Yearly, MOST POPULAR on Lifetime (correct labels)
+- [ ] Add actual app screenshots for Nutrition, Medications, Progress pages (need user to provide)
+- [ ] Restore multilingual support (i18n) for new page structure
