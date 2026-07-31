@@ -17,16 +17,16 @@ function buildAIPrompt(data: FullAnalyticsData): string {
     .map((p) => {
       const eng = p.likes + p.comments + p.shares + p.saves;
       const er = p.reach > 0 ? ((eng / p.reach) * 100).toFixed(1) : "0.0";
-      const webVisits = website.socialReferrals[p.platform] ?? 0;
-      return `${p.platform.toUpperCase()}: reach=${p.reach}, impressions=${p.impressions}, followers=${p.followers}, engagement=${eng} (${er}%), website_referrals=${webVisits}`;
+      return `${p.platform.toUpperCase()}: reach=${p.reach}, impressions=${p.impressions}, followers=${p.followers}, profile_views=${p.profileViews}, engagement=${eng} (${er}%)`;
     })
     .join("\n");
 
   const totalReach = social.platforms.reduce((s, p) => s + p.reach, 0);
   const totalEng = social.platforms.reduce((s, p) => s + p.likes + p.comments + p.shares + p.saves, 0);
-  const totalSocialVisits = Object.values(website.socialReferrals).reduce((s, v) => s + v, 0);
+  const totalFollowers = social.platforms.reduce((s, p) => s + p.followers, 0);
+  const totalProfileViews = social.platforms.reduce((s, p) => s + p.profileViews, 0);
 
-  return `You are analyzing a week of social media and website performance for YFIT AI, a fitness and nutrition app.
+  return `You are analyzing a week of social media performance for YFIT AI, a fitness and nutrition app.
 
 REPORT PERIOD: ${data.weekStart} to ${data.weekEnd}
 
@@ -37,24 +37,10 @@ TOTALS:
 - Total reach across all platforms: ${totalReach}
 - Total engagement (likes + comments + shares + saves): ${totalEng}
 - Overall engagement rate: ${totalReach > 0 ? ((totalEng / totalReach) * 100).toFixed(2) : "0.00"}%
+- Total followers across all platforms: ${totalFollowers}
+- Total profile views: ${totalProfileViews}
 
-WEBSITE PERFORMANCE (yfitai.com, last 7 days):
-- Unique visitors: ${website.stats.visitors}
-- Pageviews: ${website.stats.pageviews}
-- Sessions: ${website.stats.visits}
-- Bounce rate: ${website.stats.visits > 0 ? ((website.stats.bounces / website.stats.visits) * 100).toFixed(1) : "0"}%
-- Avg session: ${website.stats.visits > 0 ? (website.stats.totaltime / website.stats.visits / 60).toFixed(1) : "0"} minutes
-- Visits from social media: ${totalSocialVisits}
-
-TOP PAGES:
-${website.topPages.slice(0, 5).map((p) => `- ${p.x}: ${p.y} views`).join("\n")}
-
-SOCIAL → WEBSITE REFERRALS:
-${Object.entries(website.socialReferrals)
-  .filter(([, v]) => v > 0)
-  .sort(([, a], [, b]) => b - a)
-  .map(([p, v]) => `- ${p}: ${v} visits`)
-  .join("\n") || "- No social referral data this week"}
+NOTE: Website analytics (yfitai.com) are not yet tracked. Focus analysis entirely on social media performance.
 
 Please write a plain-language weekly performance summary for the YFIT AI team. Use simple, direct language (aim for 7th grade reading level). Structure your response as follows:
 

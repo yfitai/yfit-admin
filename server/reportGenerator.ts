@@ -101,13 +101,15 @@ export async function generateWeeklyReport(
     const overallEngRate = totalReach > 0 ? (totalEngagementSum / totalReach) * 100 : 0;
     const totalSocialVisits = Object.values(website.socialReferrals).reduce((s, v) => s + v, 0);
 
+    const totalFollowers = social.platforms.reduce((s, p) => s + p.followers, 0);
+    const totalProfileViews = social.platforms.reduce((s, p) => s + p.profileViews, 0);
     const summaryMetrics = [
       { label: "Total Reach", value: formatNumber(totalReach), sub: "across 6 platforms" },
       { label: "Total Impressions", value: formatNumber(totalImpressions), sub: "across 6 platforms" },
       { label: "Engagement Rate", value: formatPercent(overallEngRate), sub: "likes + comments + shares + saves" },
-      { label: "Website Visitors", value: formatNumber(website.stats.visitors), sub: `${formatNumber(website.stats.pageviews)} pageviews` },
-      { label: "Social → Website", value: formatNumber(totalSocialVisits), sub: "visits from social referrals" },
-      { label: "Bounce Rate", value: formatPercent(bounceRate(website.stats.bounces, website.stats.visits)), sub: `avg ${avgSessionMin(website.stats.totaltime, website.stats.visits).toFixed(1)} min/session` },
+      { label: "Total Engagement", value: formatNumber(totalEngagementSum), sub: "actions across all platforms" },
+      { label: "Total Followers", value: formatNumber(totalFollowers), sub: "across 6 platforms" },
+      { label: "Profile Views", value: formatNumber(totalProfileViews), sub: "people who viewed profiles" },
     ];
 
     metricGrid(doc, summaryMetrics, 50, doc.y + 10, contentW);
@@ -133,79 +135,6 @@ export async function generateWeeklyReport(
     });
 
     drawTable(doc, tableHeaders, tableRows, 50, doc.y + 15, contentW);
-
-    // ── Website Analytics ─────────────────────────────────────────────────────
-    doc.moveDown(2);
-    sectionHeader(doc, "Website Analytics — yfitai.com", pageW);
-
-    const websiteMetrics = [
-      { label: "Unique Visitors", value: formatNumber(website.stats.visitors), sub: "last 7 days" },
-      { label: "Pageviews", value: formatNumber(website.stats.pageviews), sub: "total pages viewed" },
-      { label: "Sessions", value: formatNumber(website.stats.visits), sub: "unique sessions" },
-      { label: "Bounce Rate", value: formatPercent(bounceRate(website.stats.bounces, website.stats.visits)), sub: "single-page sessions" },
-      { label: "Avg. Session", value: `${avgSessionMin(website.stats.totaltime, website.stats.visits).toFixed(1)} min`, sub: "time on site" },
-      { label: "Social Traffic", value: formatNumber(totalSocialVisits), sub: "from social platforms" },
-    ];
-
-    metricGrid(doc, websiteMetrics, 50, doc.y + 10, contentW);
-
-    // Top pages
-    if (website.topPages.length > 0) {
-      doc.moveDown(1.5);
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .fillColor(DARK)
-        .text("Top Pages", 50, doc.y);
-      doc.moveDown(0.5);
-
-      website.topPages.slice(0, 8).forEach((page, i) => {
-        const barWidth = Math.max(2, (page.y / (website.topPages[0]?.y || 1)) * (contentW - 200));
-        doc
-          .fontSize(9)
-          .font("Helvetica")
-          .fillColor(GRAY)
-          .text(`${i + 1}.`, 50, doc.y, { width: 20 })
-          .fillColor(DARK)
-          .text(page.x || "/", 70, doc.y - doc.currentLineHeight(), { width: 200 })
-          .fillColor(GRAY)
-          .text(formatNumber(page.y), 280, doc.y - doc.currentLineHeight(), { width: 60, align: "right" });
-
-        const barY = doc.y - doc.currentLineHeight() / 2;
-        doc.rect(350, barY - 4, barWidth, 8).fill(GREEN);
-        doc.moveDown(0.3);
-      });
-    }
-
-    // Social referral breakdown
-    if (totalSocialVisits > 0) {
-      doc.moveDown(1.5);
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .fillColor(DARK)
-        .text("Social → Website Traffic", 50, doc.y);
-      doc.moveDown(0.5);
-
-      const sorted = Object.entries(website.socialReferrals)
-        .filter(([, v]) => v > 0)
-        .sort(([, a], [, b]) => b - a);
-
-      sorted.forEach(([platform, visits]) => {
-        const barWidth = Math.max(2, (visits / (sorted[0]?.[1] || 1)) * (contentW - 200));
-        doc
-          .fontSize(9)
-          .font("Helvetica")
-          .fillColor(DARK)
-          .text(capitalize(platform), 50, doc.y, { width: 100 })
-          .fillColor(GRAY)
-          .text(formatNumber(visits), 155, doc.y - doc.currentLineHeight(), { width: 60, align: "right" });
-
-        const barY = doc.y - doc.currentLineHeight() / 2;
-        doc.rect(230, barY - 4, barWidth, 8).fill(ACCENT);
-        doc.moveDown(0.3);
-      });
-    }
 
     // ── AI Analysis ───────────────────────────────────────────────────────────
     doc.addPage();
