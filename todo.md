@@ -220,7 +220,10 @@
 - [x] Reconcile draft quarterly gross Stripe sales, estimated fees, CIBC expenses, and provisional GST ITCs using source transactions
 - [x] Generate five draft quarterly accounting reports and flag source assumptions and review items before tax use
 - [x] Generate and visually verify a professional PDF record of the five quarterly summaries for internal records
-- [ ] Review 64 imported CIBC transactions marked unreviewed before relying on provisional GST ITCs for a tax filing
+- [x] User confirmed that the 64 imported CIBC transactions were reviewed and accepted
+- [x] Update all imported expense review-status flags to match the confirmed completed review, without changing financial values; 101 of 101 records now marked reviewed
+- [x] Independently verify the Q4 2025 CIBC expense total of CAD 5,565.96 and its category/ITC composition
+- [x] Refresh the PDF and Markdown accounting records to remove the obsolete unreviewed-transaction warning while preserving tax-review disclosures
 
 ## Marketing Site Redesign (Session 23)
 - [x] Rewrite Home.tsx with visual-first layout (remove text-heavy card sections)

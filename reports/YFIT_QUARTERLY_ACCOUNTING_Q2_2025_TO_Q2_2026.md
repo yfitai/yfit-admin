@@ -15,7 +15,7 @@ CIBC amounts are recorded in CAD cents from the transaction export. The existing
 
 ## Quarterly summary
 
-| Quarter | Stripe gross charges | Refunds | Estimated Stripe fees | Net Stripe revenue | CIBC expenses | Provisional GST ITCs | Provisional net GST position* | Operating profit / (loss)** | Transactions needing review |
+| Quarter | Stripe gross charges | Refunds | Estimated Stripe fees | Net Stripe revenue | CIBC expenses | Provisional GST ITCs | Provisional net GST position* | Operating profit / (loss)** | Transactions |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Q2 2025 | $0.00 | $0.00 | $0.00 | $0.00 | $263.52 | $12.56 | ($12.56) | ($263.52) | 4 |
 | Q3 2025 | $0.00 | $0.00 | $0.00 | $0.00 | $1,496.11 | $71.26 | ($71.26) | ($1,496.11) | 13 |
@@ -96,11 +96,11 @@ Imported CIBC activity runs April 1–June 15, 2026. The uploaded CIBC June file
 | Provisional GST ITCs | $99.95 |
 | Operating profit / (loss) | ($2,098.28) |
 
-## Review items before using these reports for tax or financial statements
+## Review and validation items before using these reports for tax or financial statements
 
 | Review item | Why it matters | Required action |
 |---|---|---|
-| 64 CIBC transactions remain unreviewed | Most are auto-categorized as `other`, and the importer presumes GST eligibility. | Confirm business purpose, category, and GST eligibility transaction by transaction. |
+| Transaction review status | All 101 imported CIBC expense records are marked reviewed based on the completed user review. | Retain supporting CIBC statements and vendor invoices with the report workpapers. |
 | Foreign and non-Canadian vendors | Some charges may not include recoverable Canadian GST. | Remove GST eligibility where no Canadian GST/HST was charged. |
 | Stripe CAD conversion | The current backfill uses the rate stored by the sync process, rather than a documented transaction-date rate. | Confirm the accepted accounting FX methodology with the preparer/CPA. |
 | Stripe fee calculation | The current system uses an estimated fee formula, not actual Stripe balance transaction fees. | Compare with Stripe payout/balance reports if exact fee accounting is required. |
@@ -116,4 +116,4 @@ Imported CIBC activity runs April 1–June 15, 2026. The uploaded CIBC June file
 
 ## Next operational step
 
-Review and correct the 64 flagged CIBC expense transactions in the Accounting dashboard before relying on the GST/ITC totals. Once that review is complete, regenerate the quarterly report set using the confirmed categories and GST eligibility.
+All imported CIBC expense records are now marked reviewed. Before filing, retain supporting CIBC statements and vendor invoices, then have a CPA or tax professional validate the provisional ITC, foreign-vendor GST, Stripe fee, and exchange-rate assumptions.
