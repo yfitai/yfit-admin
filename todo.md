@@ -214,6 +214,13 @@
 - [ ] Test bulk import with 10 months of data (Sept 2025 – Jun 2026)
 - [ ] Checkpoint and deploy
 
+## Historical Quarterly Accounting Reports — August 2026
+- [x] Inventory available CIBC credit-card statement imports and Stripe sales records for Q2 2025, Q3 2025, Q4 2025, Q1 2026, and Q2 2026
+- [x] Backfill Stripe charges for April 2025 through June 2026; found two March 2026 charges: one fully refunded and one retained $104.99 USD charge
+- [x] Reconcile draft quarterly gross Stripe sales, estimated fees, CIBC expenses, and provisional GST ITCs using source transactions
+- [x] Generate five draft quarterly accounting reports and flag source assumptions and review items before tax use
+- [ ] Review 64 imported CIBC transactions marked unreviewed before relying on provisional GST ITCs for a tax filing
+
 ## Marketing Site Redesign (Session 23)
 - [x] Rewrite Home.tsx with visual-first layout (remove text-heavy card sections)
 - [x] New problem-first hero headline: "The fitness app that tracks your medications and analyses your form"
