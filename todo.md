@@ -219,6 +219,7 @@
 - [x] Backfill Stripe charges for April 2025 through June 2026; found two March 2026 charges: one fully refunded and one retained $104.99 USD charge
 - [x] Reconcile draft quarterly gross Stripe sales, estimated fees, CIBC expenses, and provisional GST ITCs using source transactions
 - [x] Generate five draft quarterly accounting reports and flag source assumptions and review items before tax use
+- [x] Generate and visually verify a professional PDF record of the five quarterly summaries for internal records
 - [ ] Review 64 imported CIBC transactions marked unreviewed before relying on provisional GST ITCs for a tax filing
 
 ## Marketing Site Redesign (Session 23)
