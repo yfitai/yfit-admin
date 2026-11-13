@@ -50,7 +50,6 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { getLoginUrl } from "@/const";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -132,7 +131,7 @@ function SummaryCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Accounting() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, login, loginError } = useAuth();
 
   // Period selection
   const prev = getPreviousMonth();
@@ -304,9 +303,10 @@ export default function Accounting() {
             <CardDescription>Please sign in to access the accounting dashboard.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => (window.location.href = getLoginUrl())}>
+            <Button className="w-full" onClick={login}>
               Sign In
             </Button>
+            {loginError && <p role="alert" className="mt-3 text-sm text-destructive">{loginError}</p>}
           </CardContent>
         </Card>
       </div>
