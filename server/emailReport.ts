@@ -1,6 +1,12 @@
 /** Email presentation and transport. A successful API response is acceptance, not delivery confirmation. */
 import { ENV } from "./_core/env";
 import type { ReportSummary } from "./reportingModel";
+import {
+  goHostRows,
+  goSourceRows,
+  goSourceContextRows,
+  canonicalGoHeadline,
+} from "./goReportPresentation";
 
 interface SendReportResult {
   /** Resend accepted the request; this does not confirm inbox delivery. */
@@ -54,6 +60,24 @@ export function buildWeeklyReportEmail(
       "Website-side recorded social referrers",
     ],
   ];
+  // Go details have their own prominent section; historical summaries keep the existing cards.
+  if (summary.goDetails) metrics.splice(2, 2);
+  const table = (headers: string[], rows: string[][]) =>
+    `<table width="100%" cellpadding="8" cellspacing="0" style="font-size:13px;border-collapse:collapse;overflow-wrap:anywhere;"><tr>${headers.map(header => `<th align="left" style="background:#111827;color:white;">${escapeHtml(header)}</th>`).join("")}</tr>${rows.map(row => `<tr>${row.map(cell => `<td style="border-bottom:1px solid #e5e7eb;">${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table>`;
+  const sourceContext = goSourceContextRows(summary);
+  const goSection = summary.goDetails
+    ? `<section style="border:2px solid #10b981;padding:16px;margin:16px 0;">
+    <h2 style="font-size:20px;margin:0 0 12px;">Go /go - recorded arrivals</h2>
+    <p><strong>${escapeHtml(canonicalGoHeadline(summary))}</strong></p>
+    <p><strong>Combined Go pageviews: ${escapeHtml(formatNumber(summary.goPageviews))}</strong><br>Cross-host visitors: unavailable (not summed).</p>
+    ${table(["Host", "Go pageviews", "Native measured visitors", "Evidence"], goHostRows(summary))}
+    <h3>Campaign-source PAGEVIEWS for /go</h3>
+    <p>Source status: ${escapeHtml(summary.goDetails.sourceStatus)}. Not social outbound clicks or unique people. Partial/context is not certified; unavailable is not zero.</p>
+    ${table(["Campaign source", "Combined Go pageviews"], goSourceRows(summary))}
+    ${sourceContext.length ? table(["Host", "Campaign source", "Pageviews", "Evidence"], sourceContext) : ""}
+    <p style="font-size:13px;color:#6b7280;">${escapeHtml(summary.goDetails.note)}</p>
+  </section>`
+    : "";
   const cards = metrics
     .map(
       ([value, label]) => `
@@ -80,6 +104,7 @@ export function buildWeeklyReportEmail(
       <p>The attached PDF shows native measurements, data availability and what the numbers tell us for the selected period.</p>
       <p><strong>Website data status:</strong> ${escapeHtml(websiteStatus)}</p>
       <p style="white-space:pre-wrap;">${escapeHtml(summary.coverageNote)}</p>
+      ${goSection}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${cards}</table>
       <p style="font-size:14px;color:#6b7280;">Unavailable is not a measured zero. A recorded zero applies only to that available measurement. Missing tracking data does not establish whether marketing succeeded or failed.</p>
       <p style="font-size:14px;color:#6b7280;">Native reach, views and impressions are not added together. Recorded visitors are not verified unique people across devices or platforms. Go webpage recording, native outbound clicks, pin clicks and profile visits are separate measurements.</p>
@@ -149,7 +174,8 @@ export async function sendWeeklyReport(
     return {
       success: false,
       deliveryStatus: "unknown",
-      error: "Email send outcome is unknown: read failed or timed out. Check the provider before retrying to avoid a duplicate report.",
+      error:
+        "Email send outcome is unknown: read failed or timed out. Check the provider before retrying to avoid a duplicate report.",
     };
   }
 }

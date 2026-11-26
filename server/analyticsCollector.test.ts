@@ -4,6 +4,7 @@ vi.mock("./_core/env", () => ({ ENV: {
   umamiEndpoint: "https://mock-analytics.invalid", umamiWebsiteId: "mock-website",
   forgeApiKey: "mock-website-credential",
 } }));
+vi.mock("./umamiGoConfig", () => ({ umamiGoConfig: () => ({ readApiKey: null, scopeVerified: false, sourceScopeVerified: false }) }));
 import {
   combineHostStats, count, normalizeRankedRows, normalizeSocialAnalytics,
   normalizeUmamiStats, safeReferrer, socialReferralCounts, validateDailySeries,
@@ -239,7 +240,8 @@ describe("mocked-only read orchestration", () => {
       expect(u.searchParams.has("host")).toBe(false); expect(u.searchParams.has("url")).toBe(false);
     }
     expect(urls.filter(u => u.searchParams.get("type") === "path")).toHaveLength(3);
-    expect(data.stats).toEqual(ZERO); expect(data.go.stats).toEqual(ZERO);
+    expect(data.stats).toEqual(ZERO); expect(Object.values(data.go.stats).every(v => v === null)).toBe(true);
+    expect(data.go.hosts?.every(h => h.stats.pageviews === 0 && h.stats.visitors === 0 && h.status === "partial")).toBe(true);
     expect(data.status).toBe("partial"); expect(data.go.status).toBe("partial");
     expect(data.go.warnings.join()).toMatch(/acceptance.*unverified/);
     expect(Object.values(data.socialReferrals).every(v => v === null)).toBe(true);

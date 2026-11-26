@@ -54,6 +54,34 @@ export interface UmamiStats {
   totaltime: number | null;
 }
 export interface UmamiMetric { x: string; y: number; }
+export const GO_HOSTS = ["app.yfitai.com", "www.yfitai.com", "yfitai.com"] as const;
+export const GO_SOURCES = ["facebook", "instagram", "pinterest", "linkedin", "youtube", "tiktok", "direct", "unknown"] as const;
+export type GoSource = typeof GO_SOURCES[number];
+export type GoSourceCounts = Record<GoSource, number | null>;
+export interface GoHostAnalytics {
+  host: typeof GO_HOSTS[number];
+  status: "available" | "partial" | "unavailable";
+  scopeVerified: boolean;
+  stats: UmamiStats;
+  warnings: string[];
+}
+export interface GoSourceAnalytics {
+  status: "available" | "partial" | "unavailable";
+  scopeVerified: boolean;
+  pageviews: GoSourceCounts;
+  hosts: Array<{ host: typeof GO_HOSTS[number]; status: "available" | "partial" | "unavailable"; pageviews: GoSourceCounts }>;
+  scope: string;
+  warnings: string[];
+}
+export interface GoAnalytics {
+  status: "available" | "partial" | "unavailable";
+  stats: UmamiStats;
+  scope: string;
+  warnings: string[];
+  // Optional additions preserve saved v2 fixtures. No cross-host native unique query is made.
+  hosts?: GoHostAnalytics[];
+  sources?: GoSourceAnalytics;
+}
 export interface WebsiteAnalyticsResult {
   stats: UmamiStats;
   topPages: UmamiMetric[];
@@ -64,7 +92,7 @@ export interface WebsiteAnalyticsResult {
   status: "available" | "partial" | "unavailable";
   warnings: string[];
   scope: string;
-  go: { status: "available" | "partial" | "unavailable"; stats: UmamiStats; scope: string; warnings: string[] };
+  go: GoAnalytics;
 }
 export interface FullAnalyticsData {
   weekStart: string;
@@ -86,6 +114,14 @@ export interface ReportSummary {
   goPageviews: number | null;
   goVisitors: number | null;
   coverageNote: string;
+  goDetails?: {
+    status: GoAnalytics["status"];
+    hosts: Array<{ host: GoHostAnalytics["host"]; status: GoHostAnalytics["status"]; pageviews: number | null; visitors: number | null }>;
+    sourceStatus: GoSourceAnalytics["status"];
+    sourcePageviews: GoSourceCounts;
+    sourceHosts: GoSourceAnalytics["hosts"];
+    note: string;
+  };
 }
 export const REPORT_VERSION = "report-integrity-v2";
 const DAY = 86_400_000;

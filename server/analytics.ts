@@ -1,14 +1,16 @@
 /** Reporting-only collection. No publishing, tracking, database writes, or auth changes. */
 import { ENV } from "./_core/env";
 import {
-  REPORT_VERSION, makeReportPeriod,
+  GO_HOSTS, REPORT_VERSION, makeReportPeriod,
   type FullAnalyticsData, type ReportPeriod, type ReportRequest,
-  type SocialAnalyticsResult, type WebsiteAnalyticsResult, type UmamiStats,
+  type SocialAnalyticsResult, type WebsiteAnalyticsResult, type UmamiStats, type GoHostAnalytics,
 } from "./reportingModel";
 import {
   SOCIAL_PLATFORMS, STAT_KEYS, combineHostStats, emptyStats, normalizeRankedRows,
   normalizeSocialAnalytics, normalizeUmamiStats, socialReferralCounts,
 } from "./analyticsCollector";
+import { umamiGoConfig } from "./umamiGoConfig";
+import { combinedGoStats, combineGoSources, completeGoStats, emptyGoSources, normalizeGoSources, normalizeGoStats } from "./goAnalytics";
 
 // Existing callers keep importing these types from analytics.ts; contract has one owner.
 export type {
@@ -60,19 +62,24 @@ export async function fetchSocialAnalytics(input: number | ReportRequest = 7): P
   return collectSocial(makeReportPeriod(input));
 }
 
-const HOSTS = ["app.yfitai.com", "www.yfitai.com", "yfitai.com"] as const;
+const HOSTS = GO_HOSTS;
 /**
  * Current documented contract: hostname/path/type=path. Older Umami v2 uses
  * host/url and may silently strip newer filters. Do not certify filter acceptance
  * from HTTP 200 alone. No version probe, unauthenticated fallback or retry.
  * Reference: docs.umami.is/docs/api-reference/get-website-stats.
  */
-async function umamiRead(period: ReportPeriod, host: string, kind: "stats" | "pages" | "referrers", go = false): Promise<ReadResult> {
+async function umamiRead(period: ReportPeriod, host: string, kind: "stats" | "pages" | "referrers" | "sources", config: ReturnType<typeof umamiGoConfig>, go = false): Promise<ReadResult> {
   const operation = `Umami ${go ? "/go " : ""}${kind} (${host})`;
-  if (!ENV.forgeApiKey) return { ok: false, warning: `${operation}: existing read credential unavailable.` };
+  if (kind === "sources" && !(config.readApiKey && config.scopeVerified && config.sourceScopeVerified)) {
+    return { ok: false, warning: `${operation}: prepared UTM read disabled; dedicated credential and independent host/path/date/native source-grain verification gates required.` };
+  }
+  const credential = config.readApiKey ?? ENV.forgeApiKey;
+  if (!credential) return { ok: false, warning: `${operation}: existing read credential unavailable.` };
   try {
     const endpoint = ENV.umamiEndpoint.replace(/\/$/, "");
-    const url = new URL(`${endpoint}/api/websites/${encodeURIComponent(ENV.umamiWebsiteId)}/${kind === "stats" ? "stats" : "metrics"}`);
+    const route = kind === "sources" ? "utm/metrics" : kind === "stats" ? "stats" : "metrics";
+    const url = new URL(`${endpoint}/api/websites/${encodeURIComponent(ENV.umamiWebsiteId)}/${route}`);
     const params: Record<string, string | number> = {
       startAt: period.startAt,
       // Umami SQL uses inclusive BETWEEN; report endAt is exclusive.
@@ -80,9 +87,11 @@ async function umamiRead(period: ReportPeriod, host: string, kind: "stats" | "pa
       timezone: period.timezone, hostname: host, eventType: 1, match: "all",
     };
     if (go) params.path = "/go";
-    if (kind !== "stats") { params.type = kind === "pages" ? "path" : "referrer"; params.limit = kind === "pages" ? 10 : 50; }
+    if (kind === "sources") params.type = "utm_source";
+    else if (kind !== "stats") { params.type = kind === "pages" ? "path" : "referrer"; params.limit = kind === "pages" ? 10 : 50; }
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
-    return await readJson(url.toString(), { Authorization: `Bearer ${ENV.forgeApiKey}` }, operation);
+    const headers: Record<string, string> = { Authorization: `Bearer ${credential}` };
+    return await readJson(url.toString(), headers, operation);
   } catch { return { ok: false, warning: `${operation}: endpoint configuration invalid; metrics unavailable.` }; }
 }
 function statsRead(result: ReadResult, warnings: string[], label: string): UmamiStats {
@@ -94,19 +103,36 @@ function statsRead(result: ReadResult, warnings: string[], label: string): Umami
 function hasAny(stats: UmamiStats): boolean { return STAT_KEYS.some(key => stats[key] !== null); }
 function zeroStats(stats: UmamiStats): boolean { return STAT_KEYS.every(key => stats[key] === 0); }
 async function collectWebsite(period: ReportPeriod): Promise<WebsiteAnalyticsResult> {
+  const config = umamiGoConfig();
   const hostReads = await Promise.all(HOSTS.map(async host => {
-    const [stats, pages, referrers, go] = await Promise.all([
-      umamiRead(period, host, "stats"), umamiRead(period, host, "pages"),
-      umamiRead(period, host, "referrers"), umamiRead(period, host, "stats", true),
+    const [stats, pages, referrers, go, sources] = await Promise.all([
+      umamiRead(period, host, "stats", config), umamiRead(period, host, "pages", config),
+      umamiRead(period, host, "referrers", config), umamiRead(period, host, "stats", config, true),
+      umamiRead(period, host, "sources", config, true),
     ]);
-    return { host, stats, pages, referrers, go };
+    return { host, stats, pages, referrers, go, sources };
   }));
   const warnings: string[] = [];
   const goWarnings: string[] = [];
   const hostStats = hostReads.map(r => statsRead(r.stats, warnings, `Umami stats (${r.host})`));
-  const goHostStats = hostReads.map(r => statsRead(r.go, goWarnings, `Umami /go (${r.host})`));
+  const goHosts: GoHostAnalytics[] = hostReads.map(r => {
+    const stats = r.go.ok ? normalizeGoStats(r.go.data) : emptyStats();
+    const hostWarnings = !r.go.ok ? [r.go.warning] : !completeGoStats(stats) ? [`Umami /go (${r.host}): incomplete or invalid nonnegative integer counters; context only.`] : [];
+    goWarnings.push(...hostWarnings);
+    return { host: r.host, stats, scopeVerified: config.scopeVerified,
+      status: !hasAny(stats) ? "unavailable" : config.scopeVerified && completeGoStats(stats) ? "available" : "partial", warnings: hostWarnings };
+  });
+  const goHostStats = goHosts.map(h => h.stats);
   const stats = combineHostStats(hostStats);
-  const goStats = combineHostStats(goHostStats);
+  const goStats = combinedGoStats(goHosts);
+  const sourceWarnings: string[] = [];
+  const sourceHosts = hostReads.map(r => {
+    if (!r.sources.ok) { sourceWarnings.push(r.sources.warning); return { host: r.host, status: "unavailable" as const, pageviews: emptyGoSources() }; }
+    const parsed = normalizeGoSources(r.sources.data);
+    if (!parsed.valid) sourceWarnings.push(`Umami /go campaign sources (${r.host}): invalid pageview rows; context only, missing counts not zero.`);
+    return { host: r.host, status: parsed.valid ? "available" as const : "partial" as const, pageviews: parsed.pageviews };
+  });
+  const sourceStatus = sourceHosts.every(h => h.status === "available") ? "available" : sourceHosts.some(h => h.status !== "unavailable") ? "partial" : "unavailable";
   const pathRows = hostReads.map(r => {
     if (!r.pages.ok) { warnings.push(r.pages.warning); return { rows: [], valid: false }; }
     const parsed = normalizeRankedRows(r.pages.data, "path", 10);
@@ -122,7 +148,8 @@ async function collectWebsite(period: ReportPeriod): Promise<WebsiteAnalyticsRes
   // Ranked lists remain partial even below the requested cap: provider limits/exhaustion are unverified.
   warnings.push("Referrers are ranked, limited native counts with unverified exhaustion/grain; observed social counts are partial lower bounds, absent domains are unknown, not zero visits. Referrers do not identify exact posts or outbound taps.");
   warnings.push("Documented hostname/path filter requests are implemented, but acceptance by the configured managed proxy is unverified; HTTP 200/zero alone cannot certify a scoped count.");
-  goWarnings.push("Dedicated /go hostname/path requests are implemented, but managed-proxy filter acceptance and fresh real native success are unverified. Returned zero is not proof of zero actual /go arrivals.");
+  if (!config.scopeVerified) goWarnings.push("Dedicated /go hostname/path requests are implemented, but managed-proxy filter acceptance and fresh real native success are unverified. Returned zero is not proof of zero actual /go arrivals.");
+  goWarnings.push("Native measured visitors are per host only; never sum them across hosts. Combined Go visitors and sessions remain unavailable without a genuinely native deduplicated query.");
   const allReferrers = refRows.flatMap(r => r.rows);
   const socialReferrals = socialReferralCounts(allReferrers, false);
   const topPages = normalizeRankedRows(pathRows.flatMap(r => r.rows), "path", HOSTS.length * 10).rows.sort((a, b) => b.y - a.y).slice(0, 10);
@@ -142,8 +169,12 @@ async function collectWebsite(period: ReportPeriod): Promise<WebsiteAnalyticsRes
     status: someWebsiteData ? "partial" : "unavailable", warnings,
     scope: "Measured/consented website traffic only; app.yfitai.com, www.yfitai.com and yfitai.com requested separately without redirect assumptions. Admin/other hosts intended excluded; managed-proxy filter acceptance unverified. Complete Manitoba UTC-5 days. Existing Umami read credential only; no auth fallback. Ranked pages/referrers are partial.",
     go: {
-      stats: goStats, status: goHostStats.some(hasAny) ? "partial" : "unavailable",
-      scope: "Exact /go path requested separately on app.yfitai.com, www.yfitai.com and yfitai.com without redirect assumptions in selected complete-day UTC-5 window; proxy filter acceptance unverified. Measured/consented arrivals, not native link taps or conversions.", warnings: goWarnings,
+      stats: goStats, status: goStats.pageviews !== null ? "available" : goHostStats.some(hasAny) ? "partial" : "unavailable",
+      scope: `Exact /go path requested separately on app.yfitai.com, www.yfitai.com and yfitai.com without redirect assumptions in selected complete-day UTC-5 window; ${config.scopeVerified ? "dedicated read credential and operator scope verification gate enabled" : "proxy filter acceptance unverified"}. Measured/consented arrivals, not native link taps or conversions.`, warnings: goWarnings,
+      hosts: goHosts,
+      sources: { status: sourceStatus, scopeVerified: config.scopeVerified && config.sourceScopeVerified,
+        pageviews: combineGoSources(sourceHosts), hosts: sourceHosts,
+        scope: "Campaign-source PAGEVIEWS for exact /go, per requested host and selected complete-day UTC-5 dates; native utm_source grain. Not social outbound clicks or unique people. Unknown/unattributed includes empty and non-allowlisted tags, not inferred direct. Absent buckets remain unavailable; no referrer inference or subtraction. Counts can overlap users; do not add them to unique visitors.", warnings: sourceWarnings },
     },
   };
 }

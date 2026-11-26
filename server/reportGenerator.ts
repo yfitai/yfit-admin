@@ -2,6 +2,12 @@
 import PDFDocument from "pdfkit";
 import { buildReportSummary } from "./reportingSummary";
 import {
+  goHostRows,
+  goSourceRows,
+  goSourceContextRows,
+  canonicalGoHeadline,
+} from "./goReportPresentation";
+import {
   isSelectedPeriodMetric,
   type FullAnalyticsData,
   type MetricObservation,
@@ -651,6 +657,70 @@ export async function generateWeeklyReport(
     for (const warning of social.warnings)
       layout.text(`Social data warning: ${warning}`, 9, GRAY);
 
+    if (summary.goDetails) {
+      layout.section("Go /go - recorded arrivals");
+      layout.text(canonicalGoHeadline(summary), 11, DARK, true);
+      layout.text(
+        `Combined Go pageviews: ${numberText(summary.goPageviews)}. Cross-host visitors: unavailable (not summed).`,
+        11,
+        DARK,
+        true
+      );
+      layout.text(
+        `Source: Umami. Dates: ${website.period.startDate} to ${website.period.endDate}. Timezone: ${website.period.timezone}. Fetched: ${website.fetchedAt}.`,
+        8,
+        GRAY
+      );
+      layout.text(`Scope: ${website.go.scope}`, 8, GRAY);
+      layout.text(
+        "Per-host pageviews and native measured visitors. Partial/context rows are not certified totals; unavailable is not zero.",
+        9,
+        GRAY
+      );
+      layout.table(
+        ["Host", "Go pageviews", "Native measured visitors", "Evidence"],
+        goHostRows(summary),
+        [135, 75, 100, 202]
+      );
+      layout.text("Campaign-source PAGEVIEWS for /go", 11, DARK, true);
+      layout.text(
+        `Source status: ${statusText(summary.goDetails.sourceStatus)}. Not social outbound clicks or unique people. Missing buckets are unavailable, not zero.`,
+        9,
+        GRAY
+      );
+      layout.table(
+        ["Campaign source", "Combined Go pageviews"],
+        goSourceRows(summary),
+        [330, 182]
+      );
+      const sourceContext = goSourceContextRows(summary);
+      if (sourceContext.length)
+        layout.table(
+          ["Host", "Campaign source", "Pageviews", "Evidence"],
+          sourceContext,
+          [135, 120, 65, 192]
+        );
+      layout.text(summary.goDetails.note, 9, GRAY);
+      if (website.go.hosts?.some(h => !h.scopeVerified))
+        layout.text(
+          "Prepared only: Go scope is unverified. A successful response does not verify hostname/path/date filters.",
+          9,
+          GRAY,
+          true
+        );
+      if (!website.go.sources?.scopeVerified)
+        layout.text(
+          "Prepared only: campaign-source reads require the dedicated server read credential and both independent operator verification gates.",
+          9,
+          GRAY,
+          true
+        );
+      for (const warning of website.go.warnings)
+        layout.text(`Go warning: ${warning}`, 8, GRAY);
+      for (const warning of website.go.sources?.warnings ?? [])
+        layout.text(`Go source warning: ${warning}`, 8, GRAY);
+    }
+
     layout.section("Selected-period social metrics");
     layout.text(
       "Only available measurements whose scope and source dates match the selected period appear here. Pin clicks, outbound clicks and profile visits are separate actions, not recorded website visits. This compact PDF does not manufacture actual selected-week figures; the full normalized input remains in the JSON archive when archiving is configured."
@@ -811,39 +881,45 @@ export async function generateWeeklyReport(
         8,
         GRAY
       );
-    layout.text(
-      `Go status: ${statusText(website.go.status)}. Source: Umami. Scope: ${website.go.scope}. Source dates and as of: same website request above.`,
-      10,
-      DARK,
-      true
-    );
-    const goAvailable = website.go.status !== "unavailable" && websiteMatches;
-    if (website.go.status === "unavailable")
-      layout.text("Go recording is unavailable, not a measured zero.", 9, GRAY);
-    if (website.go.status === "partial")
+    if (!summary.goDetails) {
       layout.text(
-        "Returned Go counters (scope unverified): context only, not confirmed Go arrivals. A returned zero does not certify zero visits to the intended Go hostname/path.",
-        9,
-        GRAY
+        `Go status: ${statusText(website.go.status)}. Source: Umami. Scope: ${website.go.scope}. Source dates and as of: same website request above.`,
+        10,
+        DARK,
+        true
       );
-    for (const warning of website.go.warnings)
-      layout.text(`Go warning: ${warning}`, 9, GRAY);
-    layout.table(
-      ["Umami Go measurement", "Recorded value"],
-      goAvailable
-        ? websiteRows(website.go.stats, true, true)
-        : websiteRows(website.go.stats, false, true).slice(0, 3),
-      [360, 152]
-    );
-    if (!goAvailable)
+      const goAvailable = website.go.status !== "unavailable" && websiteMatches;
+      if (website.go.status === "unavailable")
+        layout.text(
+          "Go recording is unavailable, not a measured zero.",
+          9,
+          GRAY
+        );
+      if (website.go.status === "partial")
+        layout.text(
+          "Returned Go counters (scope unverified): context only, not confirmed Go arrivals. A returned zero does not certify zero visits to the intended Go hostname/path.",
+          9,
+          GRAY
+        );
+      for (const warning of website.go.warnings)
+        layout.text(`Go warning: ${warning}`, 9, GRAY);
+      layout.table(
+        ["Umami Go measurement", "Recorded value"],
+        goAvailable
+          ? websiteRows(website.go.stats, true, true)
+          : websiteRows(website.go.stats, false, true).slice(0, 3),
+        [360, 152]
+      );
+      if (!goAvailable)
+        layout.text(
+          "Other Go counters: recorded bounces and recorded visit time are unavailable, not measured zero.",
+          8,
+          GRAY
+        );
       layout.text(
-        "Other Go counters: recorded bounces and recorded visit time are unavailable, not measured zero.",
-        8,
-        GRAY
+        "Go webpage recorded visits (webpageRecordedGoVisits) are Umami visit records. Native outbound clicks, pin clicks and profile visits are different measurements. Recorded visitors are not a verified count of unique people across devices or platforms."
       );
-    layout.text(
-      "Go webpage recorded visits (webpageRecordedGoVisits) are Umami visit records. Native outbound clicks, pin clicks and profile visits are different measurements. Recorded visitors are not a verified count of unique people across devices or platforms."
-    );
+    }
 
     layout.text("Recorded social referrers", 10, DARK, true);
     layout.text(
